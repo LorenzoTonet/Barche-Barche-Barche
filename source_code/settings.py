@@ -1,0 +1,13 @@
+# Height and Width of screen
+WIDTH = 1080
+HEIGHT = 1080
+
+FPS = 60
+
+BOAT_START_X = 0
+BOAT_START_Y = 0
+
+GOAL_X = 800
+GOAL_Y = 800
+
+SEA_FRICTION = 0.98
