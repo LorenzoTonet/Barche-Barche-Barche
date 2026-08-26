@@ -1,9 +1,9 @@
 import pygame as pg
 
-from source_code.boat import Boat
-from source_code.utils import load_image, circle_rect_collision
-from source_code.map import Goal
-from source_code.settings import *
+from ester_egg.source_code.boat import Boat
+from ester_egg.source_code.utils import load_image, circle_rect_collision
+from ester_egg.source_code.map import Goal
+from ester_egg.source_code.settings import *
 
 def main():
     pg.init()

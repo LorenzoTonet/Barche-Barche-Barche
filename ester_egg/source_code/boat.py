@@ -1,6 +1,6 @@
 import pygame as pg
 import os
-from source_code.settings import BOAT_START_X, BOAT_START_Y, SEA_FRICTION
+from ester_egg.source_code.settings import BOAT_START_X, BOAT_START_Y, SEA_FRICTION
 
 class Boat:
     def __init__(self, sprite, height, acceleration):
