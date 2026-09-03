@@ -129,6 +129,7 @@ class SailingEnv(gym.Env):
 
     def _calculate_velocity(self, wind_force, boat_angle):
             # Placeholder
+            # Calculate the boat's velocity based on the wind force and boat direction
             velocity = 12
             return velocity
 
@@ -146,15 +147,39 @@ class SailingEnv(gym.Env):
         self.steps = 0
         return self._get_observation(), {}
 
-    def step(self, action):
+    def _calculate_velocity(self):
+        # Placeholder
+        # Calculate the boat's velocity based on the wind force and boat direction
+        velocity = 12
+        return velocity
+    
+    def _calculate_wind_force(self):
+        # Placeholder
+        # Calculate the wind force based on the wind velocity and sail angle
 
+        wind_velocity = self.state["wind_vector"]
+        sail_angle = self.state["sail_angle"]
+        
+        wind_force = np.array([wind_velocity[0] * np.cos(sail_angle), wind_velocity[1] * np.sin(sail_angle)])
+        return wind_force
+
+    def step(self, action):
+        # Placeholder
+        
         state = self.state
+
+        # Update sail and boat angles based on the action
         new_sail_angle = state["sail_angle"] + action["sail_rotation"][0] * self.sail_rotation_speed * self.dt
         new_boat_angle = state["boat_angle"] + action["boat_rotation"][0] * self.boat_rotation_speed * self.dt
+
         self.state["sail_angle"] = np.clip(new_sail_angle, -np.pi, np.pi)
         self.state["boat_angle"] = np.clip(new_boat_angle, -np.pi, np.pi)
 
+        # Calculate the wind push on the boat based on the current wind vector and sail angle
         wind_force = self._calculate_wind_force()
+
+        # Since F = m * a, we can assume mass = 1 for simplicity, so acceleration = force
+        # Update the boat's velocity and position based on the wind force and current velocity
 
         self.state["boat_velocity"] = self.state["boat_velocity"] + wind_force * self.dt
         self.state["boat_position"] = self.state["boat_position"] + self.state["boat_velocity"]
@@ -171,8 +196,6 @@ class SailingEnv(gym.Env):
 
         info = {}
         return self._get_observation(), reward, terminated, truncated, info
-
-
 
     def reward_function(self):
         pass
