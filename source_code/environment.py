@@ -165,6 +165,12 @@ class SailingEnv(gym.Env):
 
     def step(self, action):
         # Placeholder
+
+        # For reference: 
+        # velocity = velocity + forward direction * acceleration
+        # position = position + velocity * dt
+        # The forward direction is determined by the boat's angle
+        # The acceleration is determined by the wind force on the sail, which is a function of the wind vector and the sail angle
         
         state = self.state
 
