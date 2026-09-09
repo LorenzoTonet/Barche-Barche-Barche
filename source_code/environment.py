@@ -1,42 +1,70 @@
 import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
+import pygame
+
+from boat_physics import update_boat
+from vector_field import VecField
+from map_elements import Checkpoint
+
 
 class Config:
-    # Boat configuration parameters
-    max_speed: float = 10.0
-    sail_rotation_speed: float = 0.1
-    boat_rotation_speed: float = 0.05
-    initial_sail_angle: float = 0.0
-    initial_boat_angle: float = 0.0
-    initial_position: np.ndarray = np.array([0.0, 0.0])
+    """Configuration parameters for the boat simulation."""
 
-    # Map configuration parameters
-    map_width: int = 100
-    map_height: int = 100
-    water_friction: float = 0.1
+    def __init__(
+        self,
+        # Boat configuration
+        max_speed: float = 10.0,
+        sail_rotation_speed: float = 0.1,
+        boat_rotation_speed: float = 0.05,
+        initial_sail_angle: float = 0.0,
+        initial_boat_angle: float = 0.0,
+        initial_position: np.ndarray | None = None,
 
-    # Simulation parameters
-    dt: float = 0.1
-    max_steps: int = 200
+        # Map configuration
+        map_width: int = 100,
+        map_height: int = 100,
+        water_friction: float = 3.0,
 
+        # Simulation configuration
+        dt: float = 0.1,
+        max_steps: int = 2_000_000,
 
-class Checkpoint:
-    def __init__(self, position, number, radius):
-        self.position = position
-        self.number = number
-        self.radius = radius
+        # Rendering configuration
+        window_width: int = 600,
+        window_height: int = 600,
+        render_fps: int = 30,
+    ):
+        # Boat
+        self.max_speed = max_speed
+        self.sail_rotation_speed = sail_rotation_speed
+        self.boat_rotation_speed = boat_rotation_speed
+        self.initial_sail_angle = initial_sail_angle
+        self.initial_boat_angle = initial_boat_angle
+        self.initial_position = (
+            np.array([0.0, 0.0])
+            if initial_position is None
+            else np.array(initial_position, dtype=float)
+        )
 
+        # Map
+        self.map_width = map_width
+        self.map_height = map_height
+        self.water_friction = water_friction
 
-class VecField():
-    def __init__(self, space_length, space_width, function):
-        pass
-    def get_vec(self, point2d):
-        return
+        # Simulation
+        self.dt = dt
+        self.max_steps = max_steps
+
+        # Rendering
+        self.window_width = window_width
+        self.window_height = window_height
+        self.render_fps = render_fps
+
 
 class SailingEnv(gym.Env):
 
-    def __init__(self, config: Config, wind_vec_field: VecField, goal: Checkpoint, checkpoints: list):
+    def __init__(self, config: Config, wind_vec_field: VecField, goal: Checkpoint, checkpoints: list, render_mode: str = None):
         self.config = config
         self.checkpoints = checkpoints
         self.n_checkpoints = len(checkpoints)
@@ -76,6 +104,11 @@ class SailingEnv(gym.Env):
         })
 
         self.state = self._create_initial_state()
+
+        self.render_mode = render_mode
+        self.window_size = (config.window_width, config.window_height)
+        self.window = None
+        self.clock = None
 
 
     def _calc_relative_dist_(self, point: Checkpoint):
@@ -127,41 +160,11 @@ class SailingEnv(gym.Env):
             "next_checkpoint_idx": 0,
         }
 
-    def _calculate_velocity(self, wind_force, boat_angle):
-            # Placeholder
-            # Calculate the boat's velocity based on the wind force and boat direction
-            velocity = 12
-            return velocity
-
-    def _calculate_wind_force(self):
-        # Placeholder
-        wind_velocity = self.state["wind_vector"]
-        sail_angle = self.state["sail_angle"]
-        # Calculate the wind force based on the wind velocity and sail angle
-        wind_force = np.array([wind_velocity[0] * np.cos(sail_angle), wind_velocity[1] * np.sin(sail_angle)])
-        return wind_force
-
     def reset(self, seed=None):
         super().reset(seed=seed)
         self.state = self._create_initial_state()
         self.steps = 0
         return self._get_observation(), {}
-
-    def _calculate_velocity(self):
-        # Placeholder
-        # Calculate the boat's velocity based on the wind force and boat direction
-        velocity = 12
-        return velocity
-    
-    def _calculate_wind_force(self):
-        # Placeholder
-        # Calculate the wind force based on the wind velocity and sail angle
-
-        wind_velocity = self.state["wind_vector"]
-        sail_angle = self.state["sail_angle"]
-        
-        wind_force = np.array([wind_velocity[0] * np.cos(sail_angle), wind_velocity[1] * np.sin(sail_angle)])
-        return wind_force
 
     def step(self, action):
         # Placeholder
@@ -171,24 +174,20 @@ class SailingEnv(gym.Env):
         # position = position + velocity * dt
         # The forward direction is determined by the boat's angle
         # The acceleration is determined by the wind force on the sail, which is a function of the wind vector and the sail angle
-        
-        state = self.state
 
-        # Update sail and boat angles based on the action
-        new_sail_angle = state["sail_angle"] + action["sail_rotation"][0] * self.sail_rotation_speed * self.dt
-        new_boat_angle = state["boat_angle"] + action["boat_rotation"][0] * self.boat_rotation_speed * self.dt
 
-        self.state["sail_angle"] = np.clip(new_sail_angle, -np.pi, np.pi)
-        self.state["boat_angle"] = np.clip(new_boat_angle, -np.pi, np.pi)
+        # calculate new pointing direction
+        # calculate new acceleration
+        # calculate new velocity
+        # calculate new position
 
-        # Calculate the wind push on the boat based on the current wind vector and sail angle
-        wind_force = self._calculate_wind_force()
+        update = update_boat(self.state, action)
 
-        # Since F = m * a, we can assume mass = 1 for simplicity, so acceleration = force
-        # Update the boat's velocity and position based on the wind force and current velocity
-
-        self.state["boat_velocity"] = self.state["boat_velocity"] + wind_force * self.dt
-        self.state["boat_position"] = self.state["boat_position"] + self.state["boat_velocity"]
+        self.state["boat_position"] = update["position"]
+        self.state["boat_velocity"] = update["velocity"]
+        self.state["boat_angle"] = update["boat_angle"]
+        self.state["sail_angle"] = update["sail_angle"]
+        self.state["wind_vector"] = self.wind_vec_field.get_vec(self.state["boat_position"])
 
         reward = self.reward_function()
 
@@ -204,4 +203,54 @@ class SailingEnv(gym.Env):
         return self._get_observation(), reward, terminated, truncated, info
 
     def reward_function(self):
-        pass
+        return 2
+
+
+    # Rendering functions (from Claude)
+    def render(self):
+        if self.render_mode != "human":
+            return
+
+        if self.window is None:
+            pygame.init()
+            pygame.display.set_caption("Sailing Env")
+            self.window = pygame.display.set_mode(self.window_size)
+            self.clock = pygame.time.Clock()
+
+        canvas = pygame.Surface(self.window_size)
+        canvas.fill((10, 60, 120))  # water
+
+        scale_x = self.window_size[0] / self.config.map_width
+        scale_y = self.window_size[1] / self.config.map_height
+
+        def to_screen(pos):
+            # flip y: nel mondo l'asse y punta in alto, in pygame in basso
+            return int(pos[0] * scale_x), int(self.window_size[1] - pos[1] * scale_y)
+
+        # checkpoints
+        for i, cp in enumerate(self.checkpoints):
+            visited = self.state["visited_checkpoints"][i]
+            color = (0, 200, 0) if visited else (220, 200, 0)
+            pygame.draw.circle(canvas, color, to_screen(cp.position), 6)
+
+        # goal
+        pygame.draw.circle(canvas, (220, 0, 0), to_screen(self.goal.position), 8)
+
+        # boat (triangolino orientato secondo boat_angle)
+        bx, by = to_screen(self.state["boat_position"])
+        angle = float(self.state["boat_angle"])
+        size = 10
+        p1 = (bx + size * np.cos(angle), by - size * np.sin(angle))
+        p2 = (bx + size * np.cos(angle + 2.5), by - size * np.sin(angle + 2.5))
+        p3 = (bx + size * np.cos(angle - 2.5), by - size * np.sin(angle - 2.5))
+        pygame.draw.polygon(canvas, (255, 255, 255), [p1, p2, p3])
+
+        self.window.blit(canvas, canvas.get_rect())
+        pygame.event.pump()
+        pygame.display.update()
+        self.clock.tick(self.config.render_fps)
+
+    def close(self):
+        if self.window is not None:
+            pygame.quit()
+            self.window = None
