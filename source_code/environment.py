@@ -2,6 +2,8 @@ import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
 import pygame
+from scipy.interpolate import CubicSpline
+import matplotlib.pyplot as plt
 
 from boat_physics import update_boat
 from vector_field import VecField
@@ -36,6 +38,8 @@ class Config:
         render_fps: int = 30,
     ):
         # Boat
+        self.polar_diagram_vals = np.array([(0, 0), (52, 5.58), (60, 5.89), (75, 6.11), (90, 6.15), (110, 6.24), (120, 6.11), (135, 5.46), (150, 4.60), (180, 4.0)])
+        self.plot = False
         self.max_speed = max_speed
         self.sail_rotation_speed = sail_rotation_speed
         self.boat_rotation_speed = boat_rotation_speed
@@ -71,6 +75,8 @@ class SailingEnv(gym.Env):
         self.goal = goal
 
         self.wind_vec_field = wind_vec_field
+
+        self.polar_diagram = self.create_polar_diagram(config, config.polar_diagram_vals)
 
         self.steps = 0
         self.max_steps = config.max_steps
@@ -165,6 +171,50 @@ class SailingEnv(gym.Env):
         self.state = self._create_initial_state()
         self.steps = 0
         return self._get_observation(), {}
+
+    def create_polar_diagram(self, config, polar_diagram_vals):
+        """
+        Create a polar diagram (i.e. a function that maps angles to speeds) from the given values.
+        """
+        angles, values = zip(*polar_diagram_vals)
+        angles = np.array(angles)
+        values = np.array(values)
+
+        # scale values to be in the range [0, 1] for interpolation
+        values = values / np.max(values)
+
+        # (1,0) means first derivative at 180° is close to 0, so we just compute half of the polar diagram and then mirror it 
+        # with the 180° point as countinuous as possible.
+        cs = CubicSpline(angles, values, bc_type=((2, 0), (1, 0)))
+
+        if config.plot == True:
+            fine_angles = np.arange(0, 181, 5)
+            fine_values = cs(fine_angles)
+            plt.figure(figsize=(10, 5))
+
+            plt.subplot(1, 2, 1)
+            plt.plot(angles, values, 'ro', label='Data points')
+            plt.plot(fine_angles, fine_values, 'b-', label='Cubic Spline')
+            plt.title('Boat Speed vs True Wind Angle (TWA)')
+            plt.xlabel('TWA (°)')
+            plt.ylabel('Boat Speed (knots)')
+            plt.grid(True)
+            plt.legend()
+
+            plt.subplot(1, 2, 2, projection='polar')
+            theta_rad = np.radians(fine_angles)
+            # in plots, 0 is right, 90 is top. We put 0° at top (North) to match other polar diagrams found online.
+            plt.gca().set_theta_zero_location('N')
+            plt.gca().set_theta_direction(-1) # Clockwise
+            plt.plot(theta_rad, fine_values, 'b-', label='Starboard')
+            plt.plot(-theta_rad, fine_values, 'b--', label='Port (Symmetric)')
+            plt.title('Polar Diagram', y=1.08)
+            plt.grid(True)
+
+            plt.tight_layout()
+            plt.savefig('polar_plot.png', dpi=150)
+            plt.close()
+        return cs
 
     def step(self, action):
         # Placeholder
