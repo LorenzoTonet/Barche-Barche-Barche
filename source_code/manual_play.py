@@ -6,7 +6,25 @@ from map_elements import Checkpoint
 
 
 def play_manual():
-    config = Config()
+    config = Config(
+        max_speed = 10.0,
+        sail_rotation_speed = 0.1,
+        boat_rotation_speed = 0.05,
+        initial_sail_angle = 0.0,
+        initial_boat_angle = 0.0, 
+        initial_position = np.array([0.0, 0.0]),
+
+        map_width = 100,
+        map_height = 100,
+        water_friction = 0,
+
+        dt = 0.1,
+        max_steps = 2000000,
+
+        # Rendering
+        window_width = 600,
+        window_height = 600,
+        render_fps = 30)
     wind_vec_field = VecField(space_height = config.map_height, space_width = config.map_width, function = None)
     goal = Checkpoint(position=np.array([50.0, 50.0]), number=1, radius=5.0)
     checkpoints = []

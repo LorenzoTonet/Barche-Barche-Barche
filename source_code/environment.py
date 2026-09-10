@@ -175,13 +175,7 @@ class SailingEnv(gym.Env):
         # The forward direction is determined by the boat's angle
         # The acceleration is determined by the wind force on the sail, which is a function of the wind vector and the sail angle
 
-
-        # calculate new pointing direction
-        # calculate new acceleration
-        # calculate new velocity
-        # calculate new position
-
-        update = update_boat(self.state, action)
+        update = update_boat(self.state, action, self.dt, self.friction_coefficient)
 
         self.state["boat_position"] = update["position"]
         self.state["boat_velocity"] = update["velocity"]
@@ -203,7 +197,17 @@ class SailingEnv(gym.Env):
         return self._get_observation(), reward, terminated, truncated, info
 
     def reward_function(self):
-        return 2
+        # Placeholder reward function
+        # For now, let's just give a reward of 1 for each step the boat is moving towards the goal
+        boat_position = self.state["boat_position"]
+        goal_position = self.goal.position
+
+        distance_to_goal = np.linalg.norm(boat_position - goal_position)
+
+        # Reward is inversely proportional to the distance to the goal
+        reward = 1.0 / (distance_to_goal + 1e-5)  # Add a small value to avoid division by zero
+
+        return reward
 
 
     # Rendering functions (from Claude)
