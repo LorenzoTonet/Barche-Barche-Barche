@@ -5,7 +5,7 @@ class VecField():
         pass
 
     def get_vec(self, point2d):
-        return np.array([0.0, 0.0])
+        return np.array([-1.0, -1.0])
 
 class DynamicVecField(VecField):
     def update():

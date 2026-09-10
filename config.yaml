@@ -37,4 +37,4 @@ polar_diagram_vals:
   - [150, 4.60]
   - [180, 4.0]
 
-plot: false
+plot: False

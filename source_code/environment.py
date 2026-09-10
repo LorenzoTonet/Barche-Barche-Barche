@@ -42,7 +42,7 @@ class SailingEnv(gym.Env):
         # OBSERVATIONS = 
         self.observation_space = spaces.Dict({
             "boat_position": spaces.Box(low=np.array([0, 0]), high=np.array([config["map_width"], config["map_height"]]), dtype=np.float32),
-            "boat_velocity": spaces.Box(low=np.array([-np.inf, -np.inf]), high=np.array([np.inf, np.inf]), dtype=np.float32),
+            "boat_velocity": spaces.Box(low=(-np.inf), high=np.array(np.inf), dtype=np.float32),
             "boat_angle": spaces.Box(low=-np.pi, high=np.pi, dtype=np.float32),
             "wind_vector": spaces.Box(low=np.array([-np.inf, -np.inf]), high=np.array([np.inf, np.inf]), dtype=np.float32),
             "next_checkpoint_relative": spaces.Box(low=np.array([0, 0]), high=np.array([config["map_width"], config["map_height"]]), dtype=np.float32),
@@ -59,9 +59,10 @@ class SailingEnv(gym.Env):
 
 
     def _calc_relative_dist_(self, point: Checkpoint):
-        boat_x, boat_y = self.state["boat_position"]
+        boat_x = self.state["boat_position"][0]
+        boat_y = self.state["boat_position"][1]
         point_x, point_y = point.position
-    
+
         dx = point_x - boat_x
         dy = point_y - boat_y
         distance = np.linalg.norm(self.state["boat_position"] - point.position)
@@ -97,7 +98,7 @@ class SailingEnv(gym.Env):
     def _create_initial_state(self):
         return {
             "boat_position": self.config["initial_position"].copy(),
-            "boat_velocity": np.array([0., 0.]),
+            "boat_velocity": 0.,
             "boat_angle": self.config["initial_boat_angle"],
             "wind_vector": self.wind_vec_field.get_vec(self.config["initial_position"]),
             "visited_checkpoints": [False] * self.n_checkpoints,
@@ -114,44 +115,48 @@ class SailingEnv(gym.Env):
         """
         Create a polar diagram (i.e. a function that maps angles to speeds) from the given values.
         """
-        angles, values = zip(*polar_diagram_vals)
-        angles = np.array(angles)
-        values = np.array(values)
+        angles_deg, raw_values = zip(*polar_diagram_vals)
+        angles_deg = np.array(angles_deg)
+        raw_values = np.array(raw_values)
 
-        # scale values to be in the range [0, 1] for interpolation
-        values = values / np.max(values)
+        # scale values to [0, 1]
+        max_val = np.max(raw_values)
+        values = raw_values / max_val
 
-        # (1,0) means first derivative at 180° is close to 0, so we just compute half of the polar diagram and then mirror it 
-        # with the 180° point as countinuous as possible.
-        cs = CubicSpline(angles, values, bc_type=((2, 0), (1, 0)))
+        # convert angles to radians for spline fitting
+        angles_rad = np.radians(angles_deg)
 
-        if config["plot"] == True:
-            fine_angles = np.arange(0, 181, 5)
-            fine_values = cs(fine_angles)
+        # interpolate
+        cs = CubicSpline(angles_rad, values, bc_type=((2, 0), (1, 0)))
+
+        if config.get("plot", False):
+            fine_angles_deg = np.linspace(0, 180, 200)
+            fine_angles_rad = np.radians(fine_angles_deg)
+            fine_values = cs(fine_angles_rad)
+
             plt.figure(figsize=(10, 5))
 
             plt.subplot(1, 2, 1)
-            plt.plot(angles, values, 'ro', label='Data points')
-            plt.plot(fine_angles, fine_values, 'b-', label='Cubic Spline')
-            plt.title('Boat Speed vs True Wind Angle (TWA)')
-            plt.xlabel('TWA (°)')
-            plt.ylabel('Boat Speed (knots)')
+            plt.plot(angles_deg, values, "ro", label="Data points")
+            plt.plot(fine_angles_deg, fine_values, "b-", label="Cubic Spline")
+            plt.title("Boat Speed vs True Wind Angle (TWA)")
+            plt.xlabel("TWA (°)")
+            plt.ylabel("Normalized Boat Speed")
             plt.grid(True)
             plt.legend()
 
-            plt.subplot(1, 2, 2, projection='polar')
-            theta_rad = np.radians(fine_angles)
-            # in plots, 0 is right, 90 is top. We put 0° at top (North) to match other polar diagrams found online.
-            plt.gca().set_theta_zero_location('N')
-            plt.gca().set_theta_direction(-1) # Clockwise
-            plt.plot(theta_rad, fine_values, 'b-', label='Starboard')
-            plt.plot(-theta_rad, fine_values, 'b--', label='Port (Symmetric)')
-            plt.title('Polar Diagram', y=1.08)
+            plt.subplot(1, 2, 2, projection="polar")
+            plt.gca().set_theta_zero_location("N")
+            plt.gca().set_theta_direction(-1)  # Clockwise
+            plt.plot(fine_angles_rad, fine_values, "b-", label="Starboard")
+            plt.plot(-fine_angles_rad, fine_values, "b--", label="Port (Symmetric)")
+            plt.title("Polar Diagram", y=1.08)
             plt.grid(True)
 
             plt.tight_layout()
-            plt.savefig('polar_plot.png', dpi=150)
+            plt.savefig("polar_plot.png", dpi=150)
             plt.close()
+
         return cs
 
     def step(self, action):
@@ -163,12 +168,13 @@ class SailingEnv(gym.Env):
         # The forward direction is determined by the boat's angle
         # The acceleration is determined by the wind force on the sail, which is a function of the wind vector and the sail angle
 
-        update = update_boat(self.state, action, self.dt, self.friction_coefficient)
+        update = update_boat(self.state, action, self.dt, self.polar_diagram)
 
         self.state["boat_position"] = update["position"]
         self.state["boat_velocity"] = update["velocity"]
         self.state["boat_angle"] = update["boat_angle"]
         self.state["wind_vector"] = self.wind_vec_field.get_vec(self.state["boat_position"])
+        print(f" Wind vector: {self.state['wind_vector']}")
 
         reward = self.reward_function()
 
@@ -226,6 +232,9 @@ class SailingEnv(gym.Env):
 
         # goal
         pygame.draw.circle(canvas, (220, 0, 0), to_screen(self.goal.position), 8)
+
+        # origin
+        pygame.draw.circle(canvas, (220, 0, 0), to_screen((0, 0)), 8)
 
         # boat (triangolino orientato secondo boat_angle)
         bx, by = to_screen(self.state["boat_position"])
