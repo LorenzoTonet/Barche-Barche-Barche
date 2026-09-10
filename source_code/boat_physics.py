@@ -35,7 +35,6 @@ def update_boat(state, action, dt, polar_diagram):
 
     new_position = np.array([new_position_x, new_position_y])
     
-    print(f"\nZIOPERA\nwind angle: {np.degrees(wind_angle)}\nboat angle: {np.degrees(new_boat_angle)}\nangle diff: {np.degrees(angle_diff)} \npolar diagram value: {polar_diagram(angle_diff)}\nGRAZIE\n")
     return {
         "velocity": new_velocity,
         "position": new_position,

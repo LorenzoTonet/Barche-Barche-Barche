@@ -174,7 +174,6 @@ class SailingEnv(gym.Env):
         self.state["boat_velocity"] = update["velocity"]
         self.state["boat_angle"] = update["boat_angle"]
         self.state["wind_vector"] = self.wind_vec_field.get_vec(self.state["boat_position"])
-        print(f" Wind vector: {self.state['wind_vector']}")
 
         reward = self.reward_function()
 
