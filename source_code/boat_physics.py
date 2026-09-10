@@ -10,13 +10,10 @@ def update_boat(state, action, dt, friction):
     boat_position = state["boat_position"]
     boat_velocity = state["boat_velocity"]
     boat_angle = state["boat_angle"]
-    sail_angle = state["sail_angle"]
 
-    sail_rotation = float(action["sail_rotation"][0])
     boat_rotation = float(action["boat_rotation"][0])
 
     new_boat_angle = boat_angle + boat_rotation * dt
-    new_sail_angle = sail_angle + sail_rotation * dt
 
     forward_dir = np.array([np.cos(new_boat_angle), np.sin(new_boat_angle)])
     new_acceleration = forward_dir * .20  # valore fisso, solo per test
@@ -28,6 +25,5 @@ def update_boat(state, action, dt, friction):
         "acceleration": new_acceleration,
         "velocity": new_velocity,
         "position": new_position,
-        "boat_angle": new_boat_angle,
-        "sail_angle": new_sail_angle,
+        "boat_angle": new_boat_angle
     }

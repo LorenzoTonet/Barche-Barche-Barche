@@ -17,7 +17,6 @@ class Config:
         self,
         # Boat configuration
         max_speed: float = 10.0,
-        sail_rotation_speed: float = 0.1,
         boat_rotation_speed: float = 0.05,
         initial_sail_angle: float = 0.0,
         initial_boat_angle: float = 0.0,
@@ -41,7 +40,6 @@ class Config:
         self.polar_diagram_vals = np.array([(0, 0), (52, 5.58), (60, 5.89), (75, 6.11), (90, 6.15), (110, 6.24), (120, 6.11), (135, 5.46), (150, 4.60), (180, 4.0)])
         self.plot = False
         self.max_speed = max_speed
-        self.sail_rotation_speed = sail_rotation_speed
         self.boat_rotation_speed = boat_rotation_speed
         self.initial_sail_angle = initial_sail_angle
         self.initial_boat_angle = initial_boat_angle
@@ -82,7 +80,6 @@ class SailingEnv(gym.Env):
         self.max_steps = config.max_steps
         self.max_speed = config.max_speed
         self.friction_coefficient = config.water_friction
-        self.sail_rotation_speed = config.sail_rotation_speed
         self.boat_rotation_speed = config.boat_rotation_speed
         self.dt = config.dt
 
@@ -93,7 +90,6 @@ class SailingEnv(gym.Env):
         # The action space is a continuous 2D vector representing the rotation angle of the sail and the boat
         # for simplicity it will be parameterized as a 2D vector with values in the range [-1, 1] for both dimensions
         self.action_space = spaces.Dict({
-            "sail_rotation": spaces.Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float32),
             "boat_rotation": spaces.Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float32)
         })
 
@@ -101,7 +97,6 @@ class SailingEnv(gym.Env):
         self.observation_space = spaces.Dict({
             "boat_position": spaces.Box(low=np.array([0, 0]), high=np.array([config.map_width, config.map_height]), dtype=np.float32),
             "boat_velocity": spaces.Box(low=np.array([-np.inf, -np.inf]), high=np.array([np.inf, np.inf]), dtype=np.float32),
-            "sail_angle": spaces.Box(low=-np.pi, high=np.pi, dtype=np.float32),
             "boat_angle": spaces.Box(low=-np.pi, high=np.pi, dtype=np.float32),
             "wind_vector": spaces.Box(low=np.array([-np.inf, -np.inf]), high=np.array([np.inf, np.inf]), dtype=np.float32),
             "next_checkpoint_relative": spaces.Box(low=np.array([0, 0]), high=np.array([config.map_width, config.map_height]), dtype=np.float32),
@@ -130,7 +125,6 @@ class SailingEnv(gym.Env):
     def _get_observation(self):
         boat_position = self.state["boat_position"]
         boat_velocity = self.state["boat_velocity"]
-        sail_angle = self.state["sail_angle"]
         boat_angle = self.state["boat_angle"]
         wind_vector = self.state["wind_vector"]
         next_checkpoint_idx = self.state["next_checkpoint_idx"]
@@ -145,7 +139,6 @@ class SailingEnv(gym.Env):
         observation = {
             "boat_position": boat_position,
             "boat_velocity": boat_velocity,
-            "sail_angle": sail_angle,
             "boat_angle": boat_angle,
             "wind_vector": wind_vector,
             "next_checkpoint_relative": self._calc_relative_dist_(next_checkpoint) if next_checkpoint else np.array([0, 0, 0]),
@@ -159,7 +152,6 @@ class SailingEnv(gym.Env):
         return {
             "boat_position": self.config.initial_position.copy(),
             "boat_velocity": np.array([0., 0.]),
-            "sail_angle": self.config.initial_sail_angle,
             "boat_angle": self.config.initial_boat_angle,
             "wind_vector": self.wind_vec_field.get_vec(self.config.initial_position),
             "visited_checkpoints": [False] * self.n_checkpoints,
@@ -230,7 +222,6 @@ class SailingEnv(gym.Env):
         self.state["boat_position"] = update["position"]
         self.state["boat_velocity"] = update["velocity"]
         self.state["boat_angle"] = update["boat_angle"]
-        self.state["sail_angle"] = update["sail_angle"]
         self.state["wind_vector"] = self.wind_vec_field.get_vec(self.state["boat_position"])
 
         reward = self.reward_function()
