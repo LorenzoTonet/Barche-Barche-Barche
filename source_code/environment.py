@@ -5,9 +5,9 @@ import pygame
 from scipy.interpolate import CubicSpline
 import matplotlib.pyplot as plt
 
-from boat_physics import update_boat
-from vector_field import VecField
-from map_elements import Checkpoint
+from source_code.boat_physics import update_boat
+from source_code.vector_field import VecField
+from source_code.map_elements import Checkpoint
 
 
 class SailingEnv(gym.Env):

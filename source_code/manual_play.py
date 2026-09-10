@@ -67,6 +67,3 @@ def play_manual():
 
     env.close()
 
-
-if __name__ == "__main__":
-    play_manual()
