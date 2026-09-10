@@ -74,14 +74,14 @@ class SailingEnv(gym.Env):
 
         self.wind_vec_field = wind_vec_field
 
-        self.polar_diagram = self.create_polar_diagram(config, config.polar_diagram_vals)
+        self.polar_diagram = self.create_polar_diagram(config, config["polar_diagram_vals"])
 
         self.steps = 0
-        self.max_steps = config.max_steps
-        self.max_speed = config.max_speed
-        self.friction_coefficient = config.water_friction
-        self.boat_rotation_speed = config.boat_rotation_speed
-        self.dt = config.dt
+        self.max_steps = config["max_steps"]
+        self.max_speed = config["max_speed"]
+        self.friction_coefficient = config["water_friction"]
+        self.boat_rotation_speed = config["boat_rotation_speed"]
+        self.dt = config["dt"]
 
         self.terminated = False
         self.truncated = False
@@ -95,19 +95,19 @@ class SailingEnv(gym.Env):
 
         # OBSERVATIONS = 
         self.observation_space = spaces.Dict({
-            "boat_position": spaces.Box(low=np.array([0, 0]), high=np.array([config.map_width, config.map_height]), dtype=np.float32),
+            "boat_position": spaces.Box(low=np.array([0, 0]), high=np.array([config["map_width"], config["map_height"]]), dtype=np.float32),
             "boat_velocity": spaces.Box(low=np.array([-np.inf, -np.inf]), high=np.array([np.inf, np.inf]), dtype=np.float32),
             "boat_angle": spaces.Box(low=-np.pi, high=np.pi, dtype=np.float32),
             "wind_vector": spaces.Box(low=np.array([-np.inf, -np.inf]), high=np.array([np.inf, np.inf]), dtype=np.float32),
-            "next_checkpoint_relative": spaces.Box(low=np.array([0, 0]), high=np.array([config.map_width, config.map_height]), dtype=np.float32),
-            "next_next_checkpoint_relative": spaces.Box(low=np.array([0, 0]), high=np.array([config.map_width, config.map_height]), dtype=np.float32),
-            "goal_relative": spaces.Box(low=np.array([0, 0]), high=np.array([config.map_width, config.map_height]), dtype=np.float32)
+            "next_checkpoint_relative": spaces.Box(low=np.array([0, 0]), high=np.array([config["map_width"], config["map_height"]]), dtype=np.float32),
+            "next_next_checkpoint_relative": spaces.Box(low=np.array([0, 0]), high=np.array([config["map_width"], config["map_height"]]), dtype=np.float32),
+            "goal_relative": spaces.Box(low=np.array([0, 0]), high=np.array([config["map_width"], config["map_height"]]), dtype=np.float32)
         })
 
         self.state = self._create_initial_state()
 
         self.render_mode = render_mode
-        self.window_size = (config.window_width, config.window_height)
+        self.window_size = (config["window_width"], config["window_height"])
         self.window = None
         self.clock = None
 
@@ -150,10 +150,10 @@ class SailingEnv(gym.Env):
 
     def _create_initial_state(self):
         return {
-            "boat_position": self.config.initial_position.copy(),
+            "boat_position": self.config["initial_position"].copy(),
             "boat_velocity": np.array([0., 0.]),
-            "boat_angle": self.config.initial_boat_angle,
-            "wind_vector": self.wind_vec_field.get_vec(self.config.initial_position),
+            "boat_angle": self.config["initial_boat_angle"],
+            "wind_vector": self.wind_vec_field.get_vec(self.config["initial_position"]),
             "visited_checkpoints": [False] * self.n_checkpoints,
             "next_checkpoint_idx": 0,
         }
@@ -179,7 +179,7 @@ class SailingEnv(gym.Env):
         # with the 180° point as countinuous as possible.
         cs = CubicSpline(angles, values, bc_type=((2, 0), (1, 0)))
 
-        if config.plot == True:
+        if config["plot"] == True:
             fine_angles = np.arange(0, 181, 5)
             fine_values = cs(fine_angles)
             plt.figure(figsize=(10, 5))
@@ -265,8 +265,8 @@ class SailingEnv(gym.Env):
         canvas = pygame.Surface(self.window_size)
         canvas.fill((10, 60, 120))  # water
 
-        scale_x = self.window_size[0] / self.config.map_width
-        scale_y = self.window_size[1] / self.config.map_height
+        scale_x = self.window_size[0] / self.config["map_width"]
+        scale_y = self.window_size[1] / self.config["map_height"]
 
         def to_screen(pos):
             # flip y: nel mondo l'asse y punta in alto, in pygame in basso
@@ -293,7 +293,7 @@ class SailingEnv(gym.Env):
         self.window.blit(canvas, canvas.get_rect())
         pygame.event.pump()
         pygame.display.update()
-        self.clock.tick(self.config.render_fps)
+        self.clock.tick(self.config["render_fps"])
 
     def close(self):
         if self.window is not None:
