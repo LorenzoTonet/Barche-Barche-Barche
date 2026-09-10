@@ -10,63 +10,9 @@ from vector_field import VecField
 from map_elements import Checkpoint
 
 
-class Config:
-    """Configuration parameters for the boat simulation."""
-
-    def __init__(
-        self,
-        # Boat configuration
-        max_speed: float = 10.0,
-        boat_rotation_speed: float = 0.05,
-        initial_sail_angle: float = 0.0,
-        initial_boat_angle: float = 0.0,
-        initial_position: np.ndarray | None = None,
-
-        # Map configuration
-        map_width: int = 100,
-        map_height: int = 100,
-        water_friction: float = 3.0,
-
-        # Simulation configuration
-        dt: float = 0.1,
-        max_steps: int = 2_000_000,
-
-        # Rendering configuration
-        window_width: int = 600,
-        window_height: int = 600,
-        render_fps: int = 30,
-    ):
-        # Boat
-        self.polar_diagram_vals = np.array([(0, 0), (52, 5.58), (60, 5.89), (75, 6.11), (90, 6.15), (110, 6.24), (120, 6.11), (135, 5.46), (150, 4.60), (180, 4.0)])
-        self.plot = False
-        self.max_speed = max_speed
-        self.boat_rotation_speed = boat_rotation_speed
-        self.initial_sail_angle = initial_sail_angle
-        self.initial_boat_angle = initial_boat_angle
-        self.initial_position = (
-            np.array([0.0, 0.0])
-            if initial_position is None
-            else np.array(initial_position, dtype=float)
-        )
-
-        # Map
-        self.map_width = map_width
-        self.map_height = map_height
-        self.water_friction = water_friction
-
-        # Simulation
-        self.dt = dt
-        self.max_steps = max_steps
-
-        # Rendering
-        self.window_width = window_width
-        self.window_height = window_height
-        self.render_fps = render_fps
-
-
 class SailingEnv(gym.Env):
 
-    def __init__(self, config: Config, wind_vec_field: VecField, goal: Checkpoint, checkpoints: list, render_mode: str = None):
+    def __init__(self, config: dict, wind_vec_field: VecField, goal: Checkpoint, checkpoints: list, render_mode: str = None):
         self.config = config
         self.checkpoints = checkpoints
         self.n_checkpoints = len(checkpoints)
