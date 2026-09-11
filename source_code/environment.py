@@ -159,6 +159,16 @@ class SailingEnv(gym.Env):
 
         return cs
 
+    def check_checkpoint_reached(self):
+            next_checkpoint_idx = self.state["next_checkpoint_idx"]
+            if next_checkpoint_idx < self.n_checkpoints:
+                next_checkpoint = self.checkpoints[next_checkpoint_idx]
+                distance_to_next_checkpoint = np.linalg.norm(self.state["boat_position"] - next_checkpoint.position)
+                if distance_to_next_checkpoint <= next_checkpoint.radius:
+                    self.state["visited_checkpoints"][next_checkpoint_idx] = True
+                    self.state["next_checkpoint_idx"] += 1
+
+    
     def step(self, action):
         # Placeholder
 
