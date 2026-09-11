@@ -4,6 +4,7 @@ import numpy as np
 import pygame
 from scipy.interpolate import CubicSpline
 import matplotlib.pyplot as plt
+import math
 
 from source_code.boat_physics import update_boat
 from source_code.vector_field import VecField
@@ -214,36 +215,38 @@ class SailingEnv(gym.Env):
     def render(self):
         if self.render_mode != "human":
             return
-
+ 
         if self.window is None:
             pygame.init()
+            pygame.font.init()
             pygame.display.set_caption("Sailing Env")
             self.window = pygame.display.set_mode(self.window_size)
             self.clock = pygame.time.Clock()
-
+            self.font = pygame.font.SysFont("Arial", 16)
+ 
         canvas = pygame.Surface(self.window_size)
         canvas.fill((10, 60, 120))  # water
-
+ 
         scale_x = self.window_size[0] / self.config["map_width"]
         scale_y = self.window_size[1] / self.config["map_height"]
-
+ 
         def to_screen(pos):
             # flip y: nel mondo l'asse y punta in alto, in pygame in basso
             return int(pos[0] * scale_x), int(self.window_size[1] - pos[1] * scale_y)
-
+ 
         # checkpoints
         for i, cp in enumerate(self.checkpoints):
             visited = self.state["visited_checkpoints"][i]
             color = (0, 200, 0) if visited else (220, 200, 0)
             pygame.draw.circle(canvas, color, to_screen(cp.position), 6)
-
+ 
             # The last checkpoint is the goal, so we can draw a larger circle around it
             if i == len(self.checkpoints) - 1:
                 pygame.draw.circle(canvas, (255, 0, 0), to_screen(cp.position), int(cp.radius * scale_x), 2)
-
+ 
         # origin
         pygame.draw.circle(canvas, (220, 0, 0), to_screen((0, 0)), 8)
-
+ 
         # boat (triangolino orientato secondo boat_angle)
         bx, by = to_screen(self.state["boat_position"])
         angle = float(self.state["boat_angle"])
@@ -252,12 +255,73 @@ class SailingEnv(gym.Env):
         p2 = (bx + size * np.cos(angle + 2.5), by - size * np.sin(angle + 2.5))
         p3 = (bx + size * np.cos(angle - 2.5), by - size * np.sin(angle - 2.5))
         pygame.draw.polygon(canvas, (255, 255, 255), [p1, p2, p3])
-
+ 
+        # --- Wind indicator ---
+        wind_vector = self.state["wind_vector"]
+        wind_speed = float(np.linalg.norm(wind_vector))
+        # direction the wind is blowing TOWARD (math convention, radians)
+        wind_dir = math.atan2(wind_vector[1], wind_vector[0])
+ 
+        # True Wind Angle: angle between boat heading and wind direction, in [0, 180]
+        # (uses the correct wrapped-difference formula, independent of the
+        # +pi phase-shift bug currently in boat_physics.update_boat)
+        twa_signed = np.arctan2(np.sin(wind_dir - angle), np.cos(wind_dir - angle))
+        twa_deg = np.degrees(abs(twa_signed))
+ 
+        if twa_deg < 45:
+            point_of_sail = "In panna / bolina stretta"
+        elif twa_deg < 80:
+            point_of_sail = "Bolina"
+        elif twa_deg < 100:
+            point_of_sail = "Traverso"
+        elif twa_deg < 150:
+            point_of_sail = "Lasco"
+        else:
+            point_of_sail = "Poppa"
+ 
+        # compass widget, top-left corner
+        compass_center = (60, 60)
+        compass_radius = 40
+        pygame.draw.circle(canvas, (230, 230, 230), compass_center, compass_radius, 1)
+ 
+        arrow_end = (
+            compass_center[0] + compass_radius * math.cos(wind_dir),
+            compass_center[1] - compass_radius * math.sin(wind_dir),  # flip y for screen coords
+        )
+        pygame.draw.line(canvas, (255, 220, 0), compass_center, arrow_end, 3)
+ 
+        # small arrowhead
+        head_size = 8
+        back_angle = math.atan2(
+            compass_center[1] - arrow_end[1], compass_center[0] - arrow_end[0]
+        )
+        for side in (0.5, -0.5):
+            hx = arrow_end[0] + head_size * math.cos(back_angle + side)
+            hy = arrow_end[1] + head_size * math.sin(back_angle + side)
+            pygame.draw.line(canvas, (255, 220, 0), arrow_end, (hx, hy), 3)
+ 
+        # boat heading marker on the compass (thin white line), for quick visual comparison
+        heading_end = (
+            compass_center[0] + compass_radius * math.cos(angle),
+            compass_center[1] - compass_radius * math.sin(angle),
+        )
+        pygame.draw.line(canvas, (255, 255, 255), compass_center, heading_end, 1)
+ 
+        # text readout
+        lines = [
+            f"Wind speed: {wind_speed:.2f}",
+            f"TWA: {twa_deg:.1f} deg",
+            f"Point of sail: {point_of_sail}",
+        ]
+        for i, line in enumerate(lines):
+            surf = self.font.render(line, True, (255, 255, 255))
+            canvas.blit(surf, (10, 110 + i * 18))
+ 
         self.window.blit(canvas, canvas.get_rect())
         pygame.event.pump()
         pygame.display.update()
         self.clock.tick(self.config["render_fps"])
-
+ 
     def close(self):
         if self.window is not None:
             pygame.quit()
