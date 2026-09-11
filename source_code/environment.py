@@ -12,12 +12,12 @@ from source_code.map_elements import Checkpoint
 
 class SailingEnv(gym.Env):
 
-    def __init__(self, config: dict, wind_vec_field: VecField, checkpoints: list, render_mode: str = None):
+    def __init__(self, config: dict, checkpoints: list, render_mode: str = None):
         self.config = config
         self.checkpoints = checkpoints
         self.n_checkpoints = len(checkpoints)
 
-        self.wind_vec_field = wind_vec_field
+        self.wind_vec_field = VecField(self.config)
 
         self.polar_diagram = self.create_polar_diagram(config, config["polar_diagram_vals"])
 
@@ -194,10 +194,13 @@ class SailingEnv(gym.Env):
             terminated = True
 
         info = {}
+        
         if self.state["next_checkpoint_idx"] >= self.n_checkpoints:
             terminated = True
             info["message"] = "All checkpoints reached!"
 
+        self.wind_vec_field.update()
+        
         return self._get_observation(), reward, terminated, truncated, info
 
     def reward_function(self):

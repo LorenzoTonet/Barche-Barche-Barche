@@ -2,6 +2,8 @@ mode: "human"
 # mode: "agent"
 # mode: "random"
 
+
+# init
 max_speed: 10.0
 sail_rotation_speed: 0.1
 boat_rotation_speed: 0.05
@@ -11,19 +13,33 @@ initial_position:
   - 0.0
   - 0.0
 
+
+# wind vector field
+#   if I want a uniform change over the env, space_scale = 0.0. If I want a static wind, speed_variance = 0.0 and max_angle_shift = 0.0.
+initial_wind:
+  - -1.0
+  - -1.0
+space_scale: 0.005     # suggested value: 0.005
+time_scale: 0.2       # suggested value: 0.02
+speed_variance: 0.2    # suggested value: 0.2
+max_angle_shift: 45    # suggested value: 45 in degrees!
+
 # Map configuration
 map_width: 100
 map_height: 100
 water_friction: 3.0
 
+
 # Simulation configuration
 dt: 0.1
 max_steps: 2000000
+
 
 # Rendering configuration
 window_width: 600
 window_height: 600
 render_fps: 30
+
 
 polar_diagram_vals:
   - [0, 0]
@@ -36,5 +52,6 @@ polar_diagram_vals:
   - [135, 5.46]
   - [150, 4.60]
   - [180, 4.0]
+
 
 plot: False
