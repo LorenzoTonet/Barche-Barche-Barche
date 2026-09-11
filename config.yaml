@@ -20,7 +20,7 @@ initial_wind:
   - -1.0
   - -1.0
 space_scale: 0.005     # suggested value: 0.005
-time_scale: 0.2       # suggested value: 0.02
+time_scale: 0.02       # suggested value: 0.02
 speed_variance: 0.2    # suggested value: 0.2
 max_angle_shift: 45    # suggested value: 45 in degrees!
 

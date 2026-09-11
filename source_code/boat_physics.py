@@ -25,7 +25,7 @@ def update_boat(state, action, dt, polar_diagram):
     max_velocity = polar_diagram(angle_diff) * (np.linalg.norm(state["wind_vector"]))
 
     # compute acceleration based on the maximum velocity and current velocity
-    const = .05
+    const = .02
     acceleration = const * (max_velocity**2 - boat_velocity**2)
 
     # compute the new velocity and position based on the acceleration and time step

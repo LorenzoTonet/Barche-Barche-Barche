@@ -168,13 +168,6 @@ class SailingEnv(gym.Env):
 
     
     def step(self, action):
-        # Placeholder
-
-        # For reference: 
-        # velocity = velocity + forward direction * acceleration
-        # position = position + velocity * dt
-        # The forward direction is determined by the boat's angle
-        # The acceleration is determined by the wind force on the sail, which is a function of the wind vector and the sail angle
 
         update = update_boat(self.state, action, self.dt, self.polar_diagram)
 
@@ -266,7 +259,7 @@ class SailingEnv(gym.Env):
         # (uses the correct wrapped-difference formula, independent of the
         # +pi phase-shift bug currently in boat_physics.update_boat)
         twa_signed = np.arctan2(np.sin(wind_dir - angle), np.cos(wind_dir - angle))
-        twa_deg = np.degrees(abs(twa_signed))
+        twa_deg = abs(np.degrees(abs(twa_signed)) - 180)
  
         if twa_deg < 45:
             point_of_sail = "In panna / bolina stretta"
@@ -312,6 +305,7 @@ class SailingEnv(gym.Env):
             f"Wind speed: {wind_speed:.2f}",
             f"TWA: {twa_deg:.1f} deg",
             f"Point of sail: {point_of_sail}",
+            f"Boat speed: {self.state['boat_velocity']:.2f}",
         ]
         for i, line in enumerate(lines):
             surf = self.font.render(line, True, (255, 255, 255))
