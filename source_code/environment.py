@@ -12,11 +12,10 @@ from source_code.map_elements import Checkpoint
 
 class SailingEnv(gym.Env):
 
-    def __init__(self, config: dict, wind_vec_field: VecField, goal: Checkpoint, checkpoints: list, render_mode: str = None):
+    def __init__(self, config: dict, wind_vec_field: VecField, checkpoints: list, render_mode: str = None):
         self.config = config
         self.checkpoints = checkpoints
         self.n_checkpoints = len(checkpoints)
-        self.goal = goal
 
         self.wind_vec_field = wind_vec_field
 
@@ -32,7 +31,7 @@ class SailingEnv(gym.Env):
         self.terminated = False
         self.truncated = False
 
-        #ACTIONS = ROTATE_LEFT_SAIL, ROTATE_RIGHT_SAIL, ROTATE_LEFT_BOAT, ROTATE_RIGHT_BOAT
+        #ACTIONS = ROTATE_LEFT_BOAT, ROTATE_RIGHT_BOAT
         # The action space is a continuous 2D vector representing the rotation angle of the sail and the boat
         # for simplicity it will be parameterized as a 2D vector with values in the range [-1, 1] for both dimensions
         self.action_space = spaces.Dict({
@@ -42,12 +41,11 @@ class SailingEnv(gym.Env):
         # OBSERVATIONS = 
         self.observation_space = spaces.Dict({
             "boat_position": spaces.Box(low=np.array([0, 0]), high=np.array([config["map_width"], config["map_height"]]), dtype=np.float32),
-            "boat_velocity": spaces.Box(low=(-np.inf), high=np.array(np.inf), dtype=np.float32),
+            "boat_velocity": spaces.Box(low=-np.inf, high=np.inf, dtype=np.float32),
             "boat_angle": spaces.Box(low=-np.pi, high=np.pi, dtype=np.float32),
             "wind_vector": spaces.Box(low=np.array([-np.inf, -np.inf]), high=np.array([np.inf, np.inf]), dtype=np.float32),
             "next_checkpoint_relative": spaces.Box(low=np.array([0, 0]), high=np.array([config["map_width"], config["map_height"]]), dtype=np.float32),
-            "next_next_checkpoint_relative": spaces.Box(low=np.array([0, 0]), high=np.array([config["map_width"], config["map_height"]]), dtype=np.float32),
-            "goal_relative": spaces.Box(low=np.array([0, 0]), high=np.array([config["map_width"], config["map_height"]]), dtype=np.float32)
+            "next_next_checkpoint_relative": spaces.Box(low=np.array([0, 0]), high=np.array([config["map_width"], config["map_height"]]), dtype=np.float32)
         })
 
         self.state = self._create_initial_state()
@@ -89,8 +87,7 @@ class SailingEnv(gym.Env):
             "boat_angle": boat_angle,
             "wind_vector": wind_vector,
             "next_checkpoint_relative": self._calc_relative_dist_(next_checkpoint) if next_checkpoint else np.array([0, 0, 0]),
-            "next_next_checkpoint_relative": self._calc_relative_dist_(next_next_checkpoint) if next_next_checkpoint else np.array([0, 0, 0]),
-            "goal_relative": self._calc_relative_dist_(self.goal)
+            "next_next_checkpoint_relative": self._calc_relative_dist_(next_next_checkpoint) if next_next_checkpoint else np.array([0, 0, 0])
         }
 
         return observation
@@ -184,6 +181,7 @@ class SailingEnv(gym.Env):
         self.state["boat_velocity"] = update["velocity"]
         self.state["boat_angle"] = update["boat_angle"]
         self.state["wind_vector"] = self.wind_vec_field.get_vec(self.state["boat_position"])
+        self.check_checkpoint_reached()
 
         reward = self.reward_function()
 
@@ -196,19 +194,16 @@ class SailingEnv(gym.Env):
             terminated = True
 
         info = {}
+        if self.state["next_checkpoint_idx"] >= self.n_checkpoints:
+            terminated = True
+            info["message"] = "All checkpoints reached!"
+
         return self._get_observation(), reward, terminated, truncated, info
 
     def reward_function(self):
         # Placeholder reward function
         # For now, let's just give a reward of 1 for each step the boat is moving towards the goal
-        boat_position = self.state["boat_position"]
-        goal_position = self.goal.position
-
-        distance_to_goal = np.linalg.norm(boat_position - goal_position)
-
-        # Reward is inversely proportional to the distance to the goal
-        reward = 1.0 / (distance_to_goal + 1e-5)  # Add a small value to avoid division by zero
-
+        reward = 0.0
         return reward
 
 
@@ -239,8 +234,9 @@ class SailingEnv(gym.Env):
             color = (0, 200, 0) if visited else (220, 200, 0)
             pygame.draw.circle(canvas, color, to_screen(cp.position), 6)
 
-        # goal
-        pygame.draw.circle(canvas, (220, 0, 0), to_screen(self.goal.position), 8)
+            # The last checkpoint is the goal, so we can draw a larger circle around it
+            if i == len(self.checkpoints) - 1:
+                pygame.draw.circle(canvas, (255, 0, 0), to_screen(cp.position), int(cp.radius * scale_x), 2)
 
         # origin
         pygame.draw.circle(canvas, (220, 0, 0), to_screen((0, 0)), 8)

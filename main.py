@@ -25,9 +25,9 @@ if __name__ == "__main__":
     goal = Checkpoint(np.array([80.0, 80.0]), radius=5.0, number=3)
     cp1 = Checkpoint(np.array([20.0, 20.0]), radius=5.0, number=1)
     cp2 = Checkpoint(np.array([50.0, 50.0]), radius=5.0, number=2)
-    checkpoints = [cp1, cp2]
+    checkpoints = [cp1, cp2, goal]
 
-    env = SailingEnv(cfg, vector_field, goal=goal, checkpoints=checkpoints, render_mode="human")
+    env = SailingEnv(cfg, vector_field, checkpoints=checkpoints, render_mode="human")
     observation, info = env.reset()
     env.render()
 
@@ -54,7 +54,8 @@ if __name__ == "__main__":
     
             obs, reward, terminated, truncated, info = env.step(action)
             env.render()
-    
+
+            print(obs["next_checkpoint_relative"][2])
             if terminated or truncated:
                 obs, info = env.reset()
     
@@ -75,7 +76,6 @@ if __name__ == "__main__":
 
             action = env.action_space.sample()
             print(action)
-            env.step(action)
             obs, reward, terminated, truncated, info = env.step(action)
             env.render()
     
