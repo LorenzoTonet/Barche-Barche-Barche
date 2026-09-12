@@ -12,10 +12,12 @@ def update_boat(state, action, dt, polar_diagram):
     boat_velocity = state["boat_velocity"]
     boat_angle = state["boat_angle"]
 
-    boat_rotation = float(action["boat_rotation"][0])
+    boat_rotation_intensity = float(action["boat_rotation"][0]) # [-1, 1]
+    true_rotation_velocity = boat_rotation_intensity * boat_velocity 
+
 
     # compute difference between boat angle and wind angle
-    raw_angle = boat_angle + boat_rotation * dt
+    raw_angle = boat_angle + true_rotation_velocity * dt
     new_boat_angle = np.arctan2(np.sin(raw_angle), np.cos(raw_angle))
 
     wind_angle = (math.atan2(state["wind_vector"][1], state["wind_vector"][0])) % (2 * np.pi) - np.pi
