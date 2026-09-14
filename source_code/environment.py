@@ -42,7 +42,7 @@ class SailingEnv(gym.Env):
         # OBSERVATIONS = 
         self.observation_space = spaces.Dict({
             "boat_position": spaces.Box(low=np.array([0, 0]), high=np.array([config["map_width"], config["map_height"]]), dtype=np.float32),
-            "boat_velocity": spaces.Box(low=-np.inf, high=np.inf, dtype=np.float32),
+            "boat_speed": spaces.Box(low=-np.inf, high=np.inf, dtype=np.float32),
             "boat_angle": spaces.Box(low=-np.pi, high=np.pi, dtype=np.float32),
             "wind_vector": spaces.Box(low=np.array([-np.inf, -np.inf]), high=np.array([np.inf, np.inf]), dtype=np.float32),
             "next_checkpoint_relative": spaces.Box(low=np.array([0, 0]), high=np.array([config["map_width"], config["map_height"]]), dtype=np.float32),
@@ -70,7 +70,7 @@ class SailingEnv(gym.Env):
 
     def _get_observation(self):
         boat_position = self.state["boat_position"]
-        boat_velocity = self.state["boat_velocity"]
+        boat_speed = self.state["boat_speed"]
         boat_angle = self.state["boat_angle"]
         wind_vector = self.state["wind_vector"]
         next_checkpoint_idx = self.state["next_checkpoint_idx"]
@@ -84,7 +84,7 @@ class SailingEnv(gym.Env):
 
         observation = {
             "boat_position": boat_position,
-            "boat_velocity": boat_velocity,
+            "boat_speed": boat_speed,
             "boat_angle": boat_angle,
             "wind_vector": wind_vector,
             "next_checkpoint_relative": self._calc_relative_dist_(next_checkpoint) if next_checkpoint else np.array([0, 0, 0]),
@@ -96,7 +96,7 @@ class SailingEnv(gym.Env):
     def _create_initial_state(self):
         return {
             "boat_position": self.config["initial_position"].copy(),
-            "boat_velocity": 0.,
+            "boat_speed": 0.,
             "boat_angle": self.config["initial_boat_angle"],
             "wind_vector": self.wind_vec_field.get_vec(self.config["initial_position"]),
             "visited_checkpoints": [False] * self.n_checkpoints,
@@ -172,7 +172,7 @@ class SailingEnv(gym.Env):
         update = update_boat(self.state, action, self.dt, self.polar_diagram)
 
         self.state["boat_position"] = update["position"]
-        self.state["boat_velocity"] = update["velocity"]
+        self.state["boat_speed"] = update["speed"]
         self.state["boat_angle"] = update["boat_angle"]
         self.state["wind_vector"] = self.wind_vec_field.get_vec(self.state["boat_position"])
         self.check_checkpoint_reached()
@@ -305,7 +305,7 @@ class SailingEnv(gym.Env):
             f"Wind speed: {wind_speed:.2f}",
             f"TWA: {twa_deg:.1f} deg",
             f"Point of sail: {point_of_sail}",
-            f"Boat speed: {self.state['boat_velocity']:.2f}",
+            f"Boat speed: {self.state['boat_speed']:.2f}",
         ]
         for i, line in enumerate(lines):
             surf = self.font.render(line, True, (255, 255, 255))

@@ -9,11 +9,11 @@ def update_boat(state, action, dt, polar_diagram):
     direzione in cui punta la barca.
     """
     boat_position = state["boat_position"]
-    boat_velocity = state["boat_velocity"]
+    boat_speed = state["boat_speed"]
     boat_angle = state["boat_angle"]
 
     boat_rotation_intensity = float(action["boat_rotation"][0]) # [-1, 1]
-    true_rotation_velocity = boat_rotation_intensity * boat_velocity 
+    true_rotation_velocity = boat_rotation_intensity * boat_speed 
 
 
     # compute difference between boat angle and wind angle
@@ -24,21 +24,21 @@ def update_boat(state, action, dt, polar_diagram):
     angle_diff = abs(np.arctan2(np.sin(wind_angle - new_boat_angle), np.cos(wind_angle - new_boat_angle)))
 
     # compute the maximum velocity based on the angle difference
-    max_velocity = polar_diagram(angle_diff) * (np.linalg.norm(state["wind_vector"]))
+    max_speed = polar_diagram(angle_diff) * (np.linalg.norm(state["wind_vector"]))
 
     # compute acceleration based on the maximum velocity and current velocity
-    const = .02
-    acceleration = const * (max_velocity**2 - boat_velocity**2)
+    const = .2
+    acceleration = const * (max_speed**2 - boat_speed**2)
 
     # compute the new velocity and position based on the acceleration and time step
-    new_velocity = boat_velocity + acceleration * dt
-    new_position_x = boat_position[0] + new_velocity * dt * math.cos(new_boat_angle)
-    new_position_y = boat_position[1] + new_velocity * dt * math.sin(new_boat_angle)
+    new_speed = boat_speed + acceleration * dt
+    new_position_x = boat_position[0] + new_speed * dt * math.cos(new_boat_angle)
+    new_position_y = boat_position[1] + new_speed * dt * math.sin(new_boat_angle)
 
     new_position = np.array([new_position_x, new_position_y])
     
     return {
-        "velocity": new_velocity,
+        "speed": new_speed,
         "position": new_position,
         "boat_angle": new_boat_angle
     }
