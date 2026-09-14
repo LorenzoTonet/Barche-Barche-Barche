@@ -20,7 +20,7 @@ agent.load("checkpoints/ppo_sailing.pt")
 state, _ = env.reset()
 done = truncated = False
 while not (done or truncated):
-    action, _ = agent.get_action(state)
+    action, _ = agent.get_action(state, deterministic=True)
     state, reward, done, truncated, info = env.step(action)
     env.render()
 

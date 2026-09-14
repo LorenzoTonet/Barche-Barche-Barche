@@ -135,10 +135,8 @@ class SailingEnv(gym.Env):
         super().reset(seed=seed, options=options)
         self.state = self._create_initial_state()
         self.steps = 0
-        self._prev_dist = np.linalg.norm(
-            self.state["boat_position"] - self.checkpoints[0].position
-        )
-        self._prev_checkpoint_idx = 0
+        self.terminated = False
+        self.truncated = False
         return self._get_observation(), {}
 
     def create_polar_diagram(self, config, polar_diagram_vals):
@@ -240,23 +238,14 @@ class SailingEnv(gym.Env):
 
         next_checkpoint = self.checkpoints[next_idx]
         current_dist = np.linalg.norm(self.state["boat_position"] - next_checkpoint.position)
+        shaping = -current_dist / 100.0
 
-        checkpoint_changed = next_idx != self._prev_checkpoint_idx
 
-        if checkpoint_changed:
-            # il target è appena cambiato (checkpoint raggiunto questo step): il salto di
-            # distanza verso il nuovo target (più lontano) non va letto come "ti sei
-            # allontanato", quindi niente shaping su questo step, solo il bonus
-            shaping = 0.0
-            checkpoint_bonus = 10.0
-        else:
-            shaping = self._prev_dist - current_dist  # positivo se ti avvicini
-            checkpoint_bonus = 0.0
-
+        
         step_penalty = -0.01
 
-        self._prev_dist = current_dist
-        self._prev_checkpoint_idx = next_idx
+        n_checkpoints_reached = sum(self.state["visited_checkpoints"])
+        checkpoint_bonus = n_checkpoints_reached * 10.0
 
         return shaping + checkpoint_bonus + step_penalty
 

@@ -1,8 +1,7 @@
 import argparse
 import yaml
 import numpy as np
-
-import pygame
+import matplotlib.pyplot as plt
 
 from source_code.environment import SailingEnv, FlattenSailingObs
 from source_code.vector_field import VecField
@@ -42,9 +41,23 @@ if __name__ == "__main__":
     
     # Train for fewer episodes because PPO converges much faster than basic Actor-Critic
     n_episodes = 100
-    returns_ppo = train_ppo_agent(ppo_agent, env, n_episodes=n_episodes, update_timestep=1000)
+    returns_ppo = train_ppo_agent(ppo_agent, env, n_episodes=n_episodes, update_timestep=2000)
 
     ppo_agent.save("checkpoints/ppo_sailing.pt")
 
     env.close()
+    plt.figure(figsize=(8, 5))
+        
+    window = 10
+    smoothed_ppo = np.convolve(returns_ppo, np.ones(window)/window, mode='valid')
+    
+    plt.plot(smoothed_ppo, label='PPO-Clip (Neural)', color='teal', linewidth=2)
+    
+    plt.title('Proximal Policy Optimization on CartPole-v1')
+    plt.xlabel('Episodes')
+    plt.ylabel('Sum of Rewards (Moving Average)')
+    plt.legend()
+    plt.grid(True, linestyle='--', alpha=0.6)
+    plt.tight_layout()
+    plt.show()
 

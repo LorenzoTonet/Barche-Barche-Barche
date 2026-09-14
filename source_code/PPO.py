@@ -108,12 +108,15 @@ class PPOAgent():
         with torch.no_grad():
                 if deterministic:
                     mu, sigma, _ = self.network(s_tensor)
+                    mu = torch.clamp(mu, -1.0, 1.0)  # Ensure the mean action is within bounds
                     return mu.item(), None  # Return the mean action for deterministic behavior
                 else:
                     mu, sigma, _ = self.network(s_tensor)
                     dist = Normal(mu, sigma)
                     action = dist.sample()
-                    log_prob = dist.log_prob(action)
+                    action = torch.clamp(action, -1.0, 1.0)  # Ensure the action is within bounds
+
+                    log_prob = dist.log_prob(action) # DA FIXAREEEEEEEEEEEEEEEEEEEEEEEE PERCHÈ È SBAGLIATOOOOOOOOOOOOOO
                     return action.item(), log_prob.item()
 
     def store_transition(self, transition):
