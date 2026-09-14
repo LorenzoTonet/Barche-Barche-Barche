@@ -32,9 +32,7 @@ if __name__ == "__main__":
 
     if cfg["mode"] == "human":
 
-        action = {
-            "boat_rotation": np.array([0.0], dtype=np.float32),
-        }
+        action = 0.0
     
         running = True
         while running:
@@ -49,7 +47,7 @@ if __name__ == "__main__":
             if keys[pygame.K_RIGHT]:
                 boat_rotation = -1.0
     
-            action["boat_rotation"][0] = boat_rotation
+            action = boat_rotation
     
             obs, reward, terminated, truncated, info = env.step(action)
             env.render()

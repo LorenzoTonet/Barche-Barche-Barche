@@ -12,7 +12,7 @@ def update_boat(state, action, dt, polar_diagram):
     boat_speed = state["boat_speed"]
     boat_angle = state["boat_angle"]
 
-    boat_rotation_intensity = float(action["boat_rotation"][0]) # [-1, 1]
+    boat_rotation_intensity = float(action) # [-1, 1]
     true_rotation_velocity = boat_rotation_intensity * boat_speed 
 
 

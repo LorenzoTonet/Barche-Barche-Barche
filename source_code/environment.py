@@ -10,6 +10,36 @@ from source_code.boat_physics import update_boat
 from source_code.vector_field import VecField
 from source_code.map_elements import Checkpoint
 
+class FlattenSailingObs(gym.ObservationWrapper):
+    """
+    Wrapper per normalizzare e appiattire le osservazioni dell'ambiente SailingEnv in un array 1D.
+    Ordine dei campi (fisso, documentalo da qualche parte se lo cambi):
+    [boat_pos_x, boat_pos_y, boat_velocity, sin(angle), cos(angle),
+     wind_x, wind_y,
+     next_cp_dx, next_cp_dy, next_cp_dist,
+     next_next_cp_dx, next_next_cp_dy, next_next_cp_dist]
+    """
+
+    def __init__(self, env: gym.Env):
+        super().__init__(env)
+
+        obs_dim = 13  # 2 + 1 + 2 + 2 + 3 + 3, vedi ordine sopra
+        # bound larghi generici: la normalizzazione vera la fai a valle (es. VecNormalize),
+        # qui serve solo a dichiarare correttamente lo spazio per eventuali wrapper successivi
+        self.observation_space = gym.spaces.Box(
+            low=-np.inf, high=np.inf, shape=(obs_dim,), dtype=np.float32
+        )
+
+    def observation(self, obs: dict) -> np.ndarray:
+        angle = float(obs["boat_angle"])
+        return np.concatenate([
+            np.asarray(obs["boat_position"], dtype=np.float32),
+            np.array([obs["boat_speed"]], dtype=np.float32),
+            np.array([np.sin(angle), np.cos(angle)], dtype=np.float32),
+            np.asarray(obs["wind_vector"], dtype=np.float32),
+            np.asarray(obs["next_checkpoint_relative"], dtype=np.float32),
+            np.asarray(obs["next_next_checkpoint_relative"], dtype=np.float32),
+        ])
 
 class SailingEnv(gym.Env):
 
@@ -35,9 +65,7 @@ class SailingEnv(gym.Env):
         #ACTIONS = ROTATE_LEFT_BOAT, ROTATE_RIGHT_BOAT
         # The action space is a continuous 2D vector representing the rotation angle of the sail and the boat
         # for simplicity it will be parameterized as a 2D vector with values in the range [-1, 1] for both dimensions
-        self.action_space = spaces.Dict({
-            "boat_rotation": spaces.Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float32)
-        })
+        self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float32)
 
         # OBSERVATIONS = 
         self.observation_space = spaces.Dict({
@@ -45,8 +73,8 @@ class SailingEnv(gym.Env):
             "boat_speed": spaces.Box(low=-np.inf, high=np.inf, dtype=np.float32),
             "boat_angle": spaces.Box(low=-np.pi, high=np.pi, dtype=np.float32),
             "wind_vector": spaces.Box(low=np.array([-np.inf, -np.inf]), high=np.array([np.inf, np.inf]), dtype=np.float32),
-            "next_checkpoint_relative": spaces.Box(low=np.array([0, 0]), high=np.array([config["map_width"], config["map_height"]]), dtype=np.float32),
-            "next_next_checkpoint_relative": spaces.Box(low=np.array([0, 0]), high=np.array([config["map_width"], config["map_height"]]), dtype=np.float32)
+            "next_checkpoint_relative": spaces.Box(low=np.array([0, 0, 0]), high=np.array([config["map_width"], config["map_height"], np.inf]), dtype=np.float32),
+            "next_next_checkpoint_relative": spaces.Box(low=np.array([0, 0, 0]), high=np.array([config["map_width"], config["map_height"], np.inf]), dtype=np.float32)
         })
 
         self.state = self._create_initial_state()
@@ -103,10 +131,14 @@ class SailingEnv(gym.Env):
             "next_checkpoint_idx": 0,
         }
 
-    def reset(self, seed=None):
-        super().reset(seed=seed)
+    def reset(self, seed=None, options=None):
+        super().reset(seed=seed, options=options)
         self.state = self._create_initial_state()
         self.steps = 0
+        self._prev_dist = np.linalg.norm(
+            self.state["boat_position"] - self.checkpoints[0].position
+        )
+        self._prev_checkpoint_idx = 0
         return self._get_observation(), {}
 
     def create_polar_diagram(self, config, polar_diagram_vals):
@@ -183,9 +215,9 @@ class SailingEnv(gym.Env):
 
         terminated = False
         truncated = False
+
         if self.steps >= self.max_steps:
             truncated = True
-            terminated = True
 
         info = {}
         
@@ -200,8 +232,33 @@ class SailingEnv(gym.Env):
     def reward_function(self):
         # Placeholder reward function
         # For now, let's just give a reward of 1 for each step the boat is moving towards the goal
-        reward = 0.0
-        return reward
+        
+        next_idx = self.state["next_checkpoint_idx"]
+
+        if next_idx >= self.n_checkpoints:
+            return 50.0  # tutti i checkpoint raggiunti
+
+        next_checkpoint = self.checkpoints[next_idx]
+        current_dist = np.linalg.norm(self.state["boat_position"] - next_checkpoint.position)
+
+        checkpoint_changed = next_idx != self._prev_checkpoint_idx
+
+        if checkpoint_changed:
+            # il target è appena cambiato (checkpoint raggiunto questo step): il salto di
+            # distanza verso il nuovo target (più lontano) non va letto come "ti sei
+            # allontanato", quindi niente shaping su questo step, solo il bonus
+            shaping = 0.0
+            checkpoint_bonus = 10.0
+        else:
+            shaping = self._prev_dist - current_dist  # positivo se ti avvicini
+            checkpoint_bonus = 0.0
+
+        step_penalty = -0.01
+
+        self._prev_dist = current_dist
+        self._prev_checkpoint_idx = next_idx
+
+        return shaping + checkpoint_bonus + step_penalty
 
 
     # Rendering functions (from Claude)
