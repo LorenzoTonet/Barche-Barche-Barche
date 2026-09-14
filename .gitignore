@@ -1,6 +1,7 @@
 # Local files on my PC
 .gitignore
 physics
+/checkpoints/
 
 
 # Byte-compiled / optimized / DLL files
