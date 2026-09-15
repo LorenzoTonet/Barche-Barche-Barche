@@ -2,7 +2,7 @@ import yaml
 import numpy as np
 from source_code.environment import SailingEnv, FlattenSailingObs
 from source_code.map_elements import Checkpoint
-from source_code.PPO import PPOAgent
+from source_code.PPO_beta import PPOAgent
 
 with open("./config.yaml") as f:
     cfg = yaml.safe_load(f)

@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from source_code.environment import SailingEnv, FlattenSailingObs
 from source_code.vector_field import VecField
 from source_code.map_elements import Checkpoint
-from source_code.PPO import train_ppo_agent, PPOAgent
+from source_code.PPO_beta import train_ppo_agent, PPOAgent
 
 
 if __name__ == "__main__":
