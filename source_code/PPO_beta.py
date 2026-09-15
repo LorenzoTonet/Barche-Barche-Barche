@@ -24,17 +24,17 @@ class ActorCriticNetwork(torch.nn.Module):
 
         self.actor_alpha = torch.nn.Sequential(
             torch.nn.Linear(hidden_dimension, action_dim),
-            torch.nn.ReLU()
+            torch.nn.Softplus()
         )
         self.actor_beta = torch.nn.Sequential(
             torch.nn.Linear(hidden_dimension, action_dim),
-            torch.nn.ReLU()
+            torch.nn.Softplus()
         )
 
     def forward(self, x):
         action_features = self.actor(x)
-        action_alpha = self.actor_alpha(action_features) + 1 + 1e-16
-        action_beta = self.actor_beta(action_features) + 1 + 1e-16
+        action_alpha = self.actor_alpha(action_features) + 1.0 + 1e-3
+        action_beta = self.actor_beta(action_features) + 1.0 + 1e-3
         state_value = self.critic(x)
         return action_alpha, action_beta, state_value
 
@@ -50,11 +50,11 @@ class SharedActorCriticNetwork(torch.nn.Module):
         )
         self.actor_alpha = torch.nn.Sequential(
             torch.nn.Linear(hidden_dimension, action_dim),
-            torch.nn.ReLU()
+            torch.nn.Softplus()
         )
         self.actor_beta = torch.nn.Sequential(
             torch.nn.Linear(hidden_dimension, action_dim),
-            torch.nn.ReLU()
+            torch.nn.Softplus()
         )
 
         self.critic = torch.nn.Linear(hidden_dimension, 1)
@@ -64,8 +64,8 @@ class SharedActorCriticNetwork(torch.nn.Module):
         
         state_value = self.critic(shared_output)
 
-        action_alpha = self.actor_alpha(shared_output) + 1 + 1e-16
-        action_beta = self.actor_beta(shared_output) + 1 + 1e-16
+        action_alpha = self.actor_alpha(shared_output) + 1.0 + 1e-3
+        action_beta = self.actor_beta(shared_output) + 1.0 + 1e-3
 
 
         return action_alpha, action_beta, state_value
@@ -117,6 +117,7 @@ class PPOAgent():
                     action = dist.sample()
                     log_prob = dist.log_prob(action)
                     action = 2 * action - 1  # Scale to [-1, 1]
+                    action = torch.clamp(action, -1.0 + 1e-6, 1.0 - 1e-6)
                     return action.item(), log_prob.item()
 
     def store_transition(self, transition):
