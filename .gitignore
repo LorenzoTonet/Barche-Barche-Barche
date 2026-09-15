@@ -2,6 +2,7 @@
 .gitignore
 physics
 /checkpoints/
+polar_plot.png
 
 
 # Byte-compiled / optimized / DLL files

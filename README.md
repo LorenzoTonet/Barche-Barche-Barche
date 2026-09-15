@@ -6,12 +6,11 @@ This repository contains the project for the final exam of the course "Reinforce
 
 The goal of the task is to reach a **GOAL** while passing through a sequence of **CHECKPOINTS**.
 
-The goal of the task is to reach a GOAL by passing through some checkpoints.
 ---
 ## SPECIFICATIONS
-STATE space = [position2d_boat, position2d_goal, position2d_CP1, ..., position2d_CPn, boat_rotation, sail_rotation, rudder_rotation, boat_velocity, wind_vectorial_field, collected_CPs]
+STATE space = [position2d_boat, position2d_goal, position2d_CP1, ..., position2d_CPn, boat_rotation, boat_velocity, wind_vectorial_field, collected_CPs]
 
-ACTION space = [rotate_sail, rotate_rudder]
+ACTION space = [rotate_boat]
 
 OBSERVATION space = [full_observability]
 
