@@ -41,6 +41,8 @@ class FlattenSailingObs(gym.ObservationWrapper):
             np.asarray(obs["next_next_checkpoint_relative"], dtype=np.float32),
         ])
 
+
+
 class SailingEnv(gym.Env):
 
     def __init__(self, config: dict, checkpoints: list, render_mode: str = None):
@@ -83,8 +85,7 @@ class SailingEnv(gym.Env):
         self.window_size = (config["window_width"], config["window_height"])
         self.window = None
         self.clock = None
-
-
+ 
     def _calc_relative_dist_(self, point: Checkpoint):
         boat_x = self.state["boat_position"][0]
         boat_y = self.state["boat_position"][1]
@@ -120,7 +121,7 @@ class SailingEnv(gym.Env):
         }
 
         return observation
-
+    
     def _create_initial_state(self):
         return {
             "boat_position": self.config["initial_position"].copy(),
@@ -129,6 +130,8 @@ class SailingEnv(gym.Env):
             "wind_vector": self.wind_vec_field.get_vec(self.config["initial_position"]),
             "visited_checkpoints": [False] * self.n_checkpoints,
             "next_checkpoint_idx": 0,
+            "prev_dist_to_next": np.linalg.norm(self.config["initial_position"] - self.checkpoints[0].position),
+            "just_reached_checkpoint": False
         }
 
     def reset(self, seed=None, options=None):
@@ -139,64 +142,6 @@ class SailingEnv(gym.Env):
         self.truncated = False
         return self._get_observation(), {}
 
-    def create_polar_diagram(self, config, polar_diagram_vals):
-        """
-        Create a polar diagram (i.e. a function that maps angles to speeds) from the given values.
-        """
-        angles_deg, raw_values = zip(*polar_diagram_vals)
-        angles_deg = np.array(angles_deg)
-        raw_values = np.array(raw_values)
-
-        # scale values to [0, 1]
-        max_val = np.max(raw_values)
-        values = raw_values / max_val
-
-        # convert angles to radians for spline fitting
-        angles_rad = np.radians(angles_deg)
-
-        # interpolate
-        cs = CubicSpline(angles_rad, values, bc_type=((2, 0), (1, 0)))
-
-        if config.get("plot", False):
-            fine_angles_deg = np.linspace(0, 180, 200)
-            fine_angles_rad = np.radians(fine_angles_deg)
-            fine_values = cs(fine_angles_rad)
-
-            plt.figure(figsize=(10, 5))
-
-            plt.subplot(1, 2, 1)
-            plt.plot(angles_deg, values, "ro", label="Data points")
-            plt.plot(fine_angles_deg, fine_values, "b-", label="Cubic Spline")
-            plt.title("Boat Speed vs True Wind Angle (TWA)")
-            plt.xlabel("TWA (°)")
-            plt.ylabel("Normalized Boat Speed")
-            plt.grid(True)
-            plt.legend()
-
-            plt.subplot(1, 2, 2, projection="polar")
-            plt.gca().set_theta_zero_location("N")
-            plt.gca().set_theta_direction(-1)  # Clockwise
-            plt.plot(fine_angles_rad, fine_values, "b-", label="Starboard")
-            plt.plot(-fine_angles_rad, fine_values, "b--", label="Port (Symmetric)")
-            plt.title("Polar Diagram", y=1.08)
-            plt.grid(True)
-
-            plt.tight_layout()
-            plt.savefig("polar_plot.png", dpi=150)
-            plt.close()
-
-        return cs
-
-    def check_checkpoint_reached(self):
-            next_checkpoint_idx = self.state["next_checkpoint_idx"]
-            if next_checkpoint_idx < self.n_checkpoints:
-                next_checkpoint = self.checkpoints[next_checkpoint_idx]
-                distance_to_next_checkpoint = np.linalg.norm(self.state["boat_position"] - next_checkpoint.position)
-                if distance_to_next_checkpoint <= next_checkpoint.radius:
-                    self.state["visited_checkpoints"][next_checkpoint_idx] = True
-                    self.state["next_checkpoint_idx"] += 1
-
-    
     def step(self, action):
 
         update = update_boat(self.state, action, self.dt, self.polar_diagram)
@@ -228,28 +173,87 @@ class SailingEnv(gym.Env):
         return self._get_observation(), reward, terminated, truncated, info
 
     def reward_function(self):
-        # Placeholder reward function
-        # For now, let's just give a reward of 1 for each step the boat is moving towards the goal
-        
         next_idx = self.state["next_checkpoint_idx"]
 
         if next_idx >= self.n_checkpoints:
-            return 50.0  # tutti i checkpoint raggiunti
+            return 500.0
 
         next_checkpoint = self.checkpoints[next_idx]
         current_dist = np.linalg.norm(self.state["boat_position"] - next_checkpoint.position)
-        shaping = -current_dist / 100.0
 
+        # progress shaping: positivo se ci si avvicina, negativo se ci si allontana
+        prev_dist = self.state["prev_dist_to_next"]
+        progress = (prev_dist - current_dist) / 100.0
+        self.state["prev_dist_to_next"] = current_dist
 
-        
         step_penalty = -0.01
 
-        n_checkpoints_reached = sum(self.state["visited_checkpoints"])
-        checkpoint_bonus = n_checkpoints_reached * 10.0
+        # bonus one-shot, non ricorrente
+        checkpoint_bonus = 10.0 if self.state["just_reached_checkpoint"] else 0.0
 
-        return shaping + checkpoint_bonus + step_penalty
-
-
+        return progress + checkpoint_bonus + step_penalty
+    
+    def create_polar_diagram(self, config, polar_diagram_vals):
+            """
+            Create a polar diagram (i.e. a function that maps angles to speeds) from the given values.
+            """
+            angles_deg, raw_values = zip(*polar_diagram_vals)
+            angles_deg = np.array(angles_deg)
+            raw_values = np.array(raw_values)
+    
+            # scale values to [0, 1]
+            max_val = np.max(raw_values)
+            values = raw_values / max_val
+    
+            # convert angles to radians for spline fitting
+            angles_rad = np.radians(angles_deg)
+    
+            # interpolate
+            cs = CubicSpline(angles_rad, values, bc_type=((2, 0), (1, 0)))
+    
+            if config.get("plot", False):
+                fine_angles_deg = np.linspace(0, 180, 200)
+                fine_angles_rad = np.radians(fine_angles_deg)
+                fine_values = cs(fine_angles_rad)
+    
+                plt.figure(figsize=(10, 5))
+    
+                plt.subplot(1, 2, 1)
+                plt.plot(angles_deg, values, "ro", label="Data points")
+                plt.plot(fine_angles_deg, fine_values, "b-", label="Cubic Spline")
+                plt.title("Boat Speed vs True Wind Angle (TWA)")
+                plt.xlabel("TWA (°)")
+                plt.ylabel("Normalized Boat Speed")
+                plt.grid(True)
+                plt.legend()
+    
+                plt.subplot(1, 2, 2, projection="polar")
+                plt.gca().set_theta_zero_location("N")
+                plt.gca().set_theta_direction(-1)  # Clockwise
+                plt.plot(fine_angles_rad, fine_values, "b-", label="Starboard")
+                plt.plot(-fine_angles_rad, fine_values, "b--", label="Port (Symmetric)")
+                plt.title("Polar Diagram", y=1.08)
+                plt.grid(True)
+    
+                plt.tight_layout()
+                plt.savefig("polar_plot.png", dpi=150)
+                plt.close()
+    
+            return cs
+    
+    def check_checkpoint_reached(self):
+            next_checkpoint_idx = self.state["next_checkpoint_idx"]
+            if next_checkpoint_idx < self.n_checkpoints:
+                next_checkpoint = self.checkpoints[next_checkpoint_idx]
+                distance_to_next_checkpoint = np.linalg.norm(self.state["boat_position"] - next_checkpoint.position)
+                if distance_to_next_checkpoint <= next_checkpoint.radius:
+                    self.state["visited_checkpoints"][next_checkpoint_idx] = True
+                    self.state["next_checkpoint_idx"] += 1
+                    self.state["just_reached_checkpoint"] = True
+                    self.state["prev_dist_to_next"] = np.linalg.norm(self.state["boat_position"] - self.checkpoints[self.state["next_checkpoint_idx"]].position) if self.state["next_checkpoint_idx"] < self.n_checkpoints else 0.0
+                else:
+                    self.state["just_reached_checkpoint"] = False
+    
     # Rendering functions (from Claude)
     def render(self):
         if self.render_mode != "human":
@@ -351,7 +355,7 @@ class SailingEnv(gym.Env):
             f"Wind speed: {wind_speed:.2f}",
             f"TWA: {twa_deg:.1f} deg",
             f"Point of sail: {point_of_sail}",
-            f"Boat speed: {self.state['boat_speed']:.2f}",
+            f"Boat speed: {self.state['boat_speed']:.2f}"
         ]
         for i, line in enumerate(lines):
             surf = self.font.render(line, True, (255, 255, 255))

@@ -8,8 +8,7 @@ with open("./config.yaml") as f:
     cfg = yaml.safe_load(f)
 
 cp1 = Checkpoint(np.array([20.0, 20.0]), radius=5.0, number=1)
-goal = Checkpoint(np.array([40.0, 20.0]), radius=5.0, number=2)
-checkpoints = [cp1, goal]
+checkpoints = [cp1]
 
 env = SailingEnv(cfg, checkpoints=checkpoints, render_mode="human")
 env = FlattenSailingObs(env)

@@ -122,6 +122,7 @@ class PPOAgent():
 
     def store_transition(self, transition):
         self.buffer.append(transition)
+
     def clear_buffer(self):
         self.buffer = []
 
@@ -135,21 +136,29 @@ class PPOAgent():
         states = torch.tensor(np.array([t[0] for t in self.buffer]), dtype=torch.float32)
         actions = torch.tensor(np.array([t[1] for t in self.buffer]), dtype=torch.float32)
         rewards = [t[2] for t in self.buffer]
+        next_states = np.array([t[3] for t in self.buffer])
         dones = [t[4] for t in self.buffer]
-        old_log_probs = torch.tensor(np.array([t[5] for t in self.buffer]), dtype=torch.float32)
+        truncateds = [t[5] for t in self.buffer] 
+        old_log_probs = torch.tensor(np.array([t[6] for t in self.buffer]), dtype=torch.float32)
+
+        next_states_tensor = torch.tensor(next_states, dtype=torch.float32)
+        with torch.no_grad():
+            _, _, next_state_values = self.network(next_states_tensor)
+        next_state_values = next_state_values.squeeze()
 
         returns = []
         discounted_sum = 0
-        for reward, done in zip(reversed(rewards), reversed(dones)):
-            if done:
+        for i in reversed(range(len(rewards))):
+            if dones[i]:
                 discounted_sum = 0
-            discounted_sum = reward + (self.discount_factor * discounted_sum)
+            elif truncateds[i]:
+                discounted_sum = next_state_values[i].item()
+            discounted_sum = rewards[i] + self.discount_factor * discounted_sum
             returns.insert(0, discounted_sum)
-            
+
         returns = torch.tensor(returns, dtype=torch.float32)
-        
-        # Normalize returns for stability
         returns = (returns - returns.mean()) / (returns.std() + 1e-8)
+
         for _ in range(self.epochs):
             # Recalculate probabilities and values under the CURRENT, continually updating network
             alpha, beta, state_values = self.network(states)
@@ -229,7 +238,7 @@ def train_ppo_agent(agent, env: gym.Env, n_episodes: int = 1500, update_timestep
             is_terminal = done and not truncated
             
             # Store data in agent's rollout buffer
-            agent.store_transition((state, action, reward, next_state, is_terminal, log_prob))
+            agent.store_transition((state, action, reward, next_state, is_terminal, truncated, log_prob))
             
             state = next_state
             returns[i] += reward
