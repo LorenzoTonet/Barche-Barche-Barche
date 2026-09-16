@@ -397,27 +397,41 @@ class SailingEnv(gym.Env):
 
 
 
-def create_random_environment(config: dict, n_checkpoints: int, map_width: int, map_height: int) -> SailingEnv:
+def create_random_environment(config: dict) -> SailingEnv:
     """
     Create a random SailingEnv environment with random checkpoints and wind field.
     """
     # Randomly generate checkpoints
     checkpoints = []
+
+    if config["train"]["env"]["variable_n_checkpoints"]:
+        n_checkpoints = np.random.randint(1, config["train"]["env"]["n_checkpoints"] + 1)  # Random number of checkpoints between 1 and n_checkpoints
+    else:
+        n_checkpoints = config["train"]["env"]["n_checkpoints"]
+
     for i in range(n_checkpoints):
-        x = np.random.uniform(0, map_width)
-        y = np.random.uniform(0, map_height)
+        # devo dividere la mappa in n_checkpoints+1 zone per evitare che i checkpoint siano troppo vicini. Dopodiché prendo un punto random in quella zona
+        # devo ricordarmi che n+1 perché lo start sarà nella zona 0, il primo checkpoint nella zona 1, ecc. L'altezza è quella di tutta la mappa, diciamo 
+        # che la stiamo dividendo in fasce
+
+        zone_width = config["map_width"] / (n_checkpoints + 1)
+        current_zone_start = (i + 1) * zone_width
+        current_zone_end = (i + 2) * zone_width
+
+        x = int(np.random.randint(current_zone_start, current_zone_end))
+        y = int(np.random.randint(0, config["map_height"]))
+
         radius = 5.0
-        checkpoints.append(Checkpoint(position=np.array([x, y]), radius=radius, number = i+1))
+        checkpoints.append(Checkpoint(position=np.array([int(x), int(y)]), radius=radius, number = i+1))
+        print(f"Checkpoint {i+1}: position=({x:.2f}, {y:.2f}), radius={radius}, number={i+1}")
 
     # Create the environment
-    env = SailingEnv(config=config, checkpoints=checkpoints, render_mode=config.get("render_mode", None))
-    env = FlattenSailingObs(env)
+    env = SailingEnv(config=config, checkpoints=checkpoints, render_mode=config["mode"])
+
+    # change randomly the initial position of the boat 
+    env.initial_boat_position = np.array([
+        int(np.random.randint(0, config["map_width"] / (n_checkpoints + 1))),
+        int(np.random.randint(0, config["map_height"]))
+    ])
+
     return env
-
-
-    cp1 = Checkpoint(np.array([20.0, 20.0]), radius=5.0, number=1)
-    cp2 = Checkpoint(np.array([40.0, 10.0]), radius=5.0, number=2)
-    checkpoints = [cp1, cp2]
-
-    env = SailingEnv(config, checkpoints=checkpoints, render_mode="human")
-    env = FlattenSailingObs(env)
