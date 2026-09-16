@@ -157,7 +157,6 @@ class PPOAgent():
             returns.insert(0, discounted_sum)
 
         returns = torch.tensor(returns, dtype=torch.float32)
-        returns = (returns - returns.mean()) / (returns.std() + 1e-8)
 
         for _ in range(self.epochs):
             # Recalculate probabilities and values under the CURRENT, continually updating network
@@ -166,13 +165,12 @@ class PPOAgent():
             
             dist = Beta(alpha, beta)
             
-            actions_raw = (actions + 1) / 2
-            actions_raw = actions_raw.clamp(1e-6, 1 - 1e-6)
-            curr_log_probs = dist.log_prob(actions_raw)
-            
+            actions_raw = ((actions + 1) / 2).clamp(1e-6, 1 - 1e-6).unsqueeze(-1)  # (N,) -> (N,1)
+            curr_log_probs = dist.log_prob(actions_raw).squeeze(-1)                
             # Calculate Advantage
             # Advantage must be detached so gradients don't flow backward through the target calculation
             advantages = returns - state_values.detach()
+            advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
             
             # 4. Calculate PPO Ratio: r(theta) = pi_new / pi_old = exp(log_new - log_old)
             ratios = torch.exp(curr_log_probs - old_log_probs)
