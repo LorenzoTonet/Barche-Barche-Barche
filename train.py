@@ -22,8 +22,9 @@ if __name__ == "__main__":
         print(f"Config file {args.config} not found. Exiting.")
         raise SystemExit(1)
 
-    cp1 = Checkpoint(np.array([15.0, 15.0]), radius=5.0, number=1)
-    checkpoints = [cp1]
+    cp1 = Checkpoint(np.array([20.0, 20.0]), radius=5.0, number=1)
+    cp2 = Checkpoint(np.array([40.0, 10.0]), radius=5.0, number=2)
+    checkpoints = [cp1, cp2]
 
     env = SailingEnv(cfg, checkpoints=checkpoints, render_mode="human")
     env = FlattenSailingObs(env)
@@ -41,7 +42,7 @@ if __name__ == "__main__":
     
     # Train for fewer episodes because PPO converges much faster than basic Actor-Critic
     n_episodes = 1000
-    returns_ppo = train_ppo_agent(ppo_agent, env, n_episodes=n_episodes, update_timestep=2000)
+    returns_ppo = train_ppo_agent(ppo_agent, env, n_episodes=n_episodes, update_timestep=4000)
 
     ppo_agent.save("checkpoints/ppo_sailing.pt")
 

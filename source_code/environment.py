@@ -61,7 +61,7 @@ class SailingEnv(gym.Env):
         self.boat_rotation_speed = config["boat_rotation_speed"]
         self.dt = config["dt"]
 
-        self.border_tolerance = config["border_tolerance"]
+        self.border_tol = config["border_tolerance"]
 
         self.terminated = False
         self.truncated = False
@@ -149,6 +149,7 @@ class SailingEnv(gym.Env):
         return self._get_observation(), {}
 
     def step(self, action):
+        info = {}
 
         update = update_boat(self.state, action, self.dt, self.polar_diagram)
 
@@ -156,7 +157,9 @@ class SailingEnv(gym.Env):
         self.state["boat_speed"] = update["speed"]
         self.state["boat_angle"] = update["boat_angle"]
         self.state["wind_vector"] = self.wind_vec_field.get_vec(self.state["boat_position"])
+
         self.check_checkpoint_reached()
+        self.check_if_out_of_borders()
         
         reward = self.reward_function()
 
@@ -168,11 +171,15 @@ class SailingEnv(gym.Env):
         if self.steps >= self.max_steps:
             truncated = True
 
-        info = {}
-        
         if self.state["next_checkpoint_idx"] >= self.n_checkpoints:
             terminated = True
             info["message"] = "All checkpoints reached!"
+            print("All checkpoints reached!")
+
+        if self.state["out_of_borders"]:
+            terminated = True
+            info["message"] = "Out of borders"
+            print("OOB")
 
         self.wind_vec_field.update()
         
@@ -184,13 +191,16 @@ class SailingEnv(gym.Env):
         if next_idx >= self.n_checkpoints:
             return 50.0
 
+        if self.state["out_of_borders"]:
+            return -50.0
         
         next_checkpoint = self.checkpoints[next_idx]
         current_dist = np.linalg.norm(self.state["boat_position"] - next_checkpoint.position)
 
         # progress shaping: positivo se ci si avvicina, negativo se ci si allontana
         prev_dist = self.state["prev_dist_to_next"]
-        progress = (prev_dist - current_dist) / 100.0
+        progress = (prev_dist - current_dist)
+        
         self.state["prev_dist_to_next"] = current_dist
 
         step_penalty = -0.1
@@ -198,7 +208,8 @@ class SailingEnv(gym.Env):
         # bonus one-shot, non ricorrente
         checkpoint_bonus = 10.0 if self.state["just_reached_checkpoint"] else 0.0
 
-        return progress * 10 + checkpoint_bonus + step_penalty
+        total_reward = progress * 100 + checkpoint_bonus + step_penalty
+        return total_reward
     
     def create_polar_diagram(self, config, polar_diagram_vals):
             """
