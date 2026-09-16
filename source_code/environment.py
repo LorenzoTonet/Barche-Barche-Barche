@@ -49,6 +49,7 @@ class SailingEnv(gym.Env):
         self.config = config
         self.checkpoints = checkpoints
         self.n_checkpoints = len(checkpoints)
+        self.initial_boat_position = config["initial_position"]
 
         self.wind_vec_field = VecField(self.config)
 
@@ -129,7 +130,7 @@ class SailingEnv(gym.Env):
     
     def _create_initial_state(self):
         return {
-            "boat_position": self.config["initial_position"].copy(),
+            "boat_position": self.initial_boat_position.copy(),
             "boat_speed": 0.,
             "boat_angle": self.config["initial_boat_angle"],
             "wind_vector": self.wind_vec_field.get_vec(self.config["initial_position"]),
@@ -392,3 +393,31 @@ class SailingEnv(gym.Env):
         if self.window is not None:
             pygame.quit()
             self.window = None
+
+
+
+
+def create_random_environment(config: dict, n_checkpoints: int, map_width: int, map_height: int) -> SailingEnv:
+    """
+    Create a random SailingEnv environment with random checkpoints and wind field.
+    """
+    # Randomly generate checkpoints
+    checkpoints = []
+    for i in range(n_checkpoints):
+        x = np.random.uniform(0, map_width)
+        y = np.random.uniform(0, map_height)
+        radius = 5.0
+        checkpoints.append(Checkpoint(position=np.array([x, y]), radius=radius, number = i+1))
+
+    # Create the environment
+    env = SailingEnv(config=config, checkpoints=checkpoints, render_mode=config.get("render_mode", None))
+    env = FlattenSailingObs(env)
+    return env
+
+
+    cp1 = Checkpoint(np.array([20.0, 20.0]), radius=5.0, number=1)
+    cp2 = Checkpoint(np.array([40.0, 10.0]), radius=5.0, number=2)
+    checkpoints = [cp1, cp2]
+
+    env = SailingEnv(config, checkpoints=checkpoints, render_mode="human")
+    env = FlattenSailingObs(env)

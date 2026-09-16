@@ -2,12 +2,56 @@ import argparse
 import yaml
 import numpy as np
 import matplotlib.pyplot as plt
-import torch
+import torch.optim as optim
 
-from source_code.environment import SailingEnv, FlattenSailingObs
+from source_code.environment import SailingEnv, FlattenSailingObs, create_random_environment
 from source_code.vector_field import VecField
 from source_code.map_elements import Checkpoint
 from source_code.PPO_beta import train_ppo_agent, PPOAgent
+
+
+def train_ppo_agent(config, agent):
+    """
+    Train a Proximal Policy Optimization (PPO-Clip) agent in the SailingEnv environment.
+    """
+    
+    optimizer = optim.Adam(agent.network.parameters(), lr=config['train']['lr'])
+
+    # TMP
+    loss = 0
+
+    # PARTE 1: Collect trajectories
+    
+    returns = np.zeros(config['train']['n_episodes'])
+    timestep_counter = 0
+
+    for i in range(config['train']['n_episodes']):
+        print("Starting episode {}/{}".format(i + 1, config['train']['n_episodes']))
+
+        # create random environment for each episode
+        env = create_random_environment(config)
+        state = env.reset()
+        done = False
+        episode_return = 0
+
+        while not done:
+            action, log_prob, value = agent.select_action(state)
+            next_state, reward, done, _ = env.step(action)
+            agent.store_transition(state, action, reward, log_prob, value)
+            state = next_state
+            episode_return += reward
+            timestep_counter += 1
+
+        returns[i] = episode_return
+
+
+
+    # Backpropagation
+    optimizer.zero_grad()
+    loss.backward()
+    optimizer.step()
+
+    return agent
 
 
 if __name__ == "__main__":
@@ -22,31 +66,20 @@ if __name__ == "__main__":
         print(f"Config file {args.config} not found. Exiting.")
         raise SystemExit(1)
 
-    cp1 = Checkpoint(np.array([20.0, 20.0]), radius=5.0, number=1)
-    cp2 = Checkpoint(np.array([40.0, 10.0]), radius=5.0, number=2)
-    checkpoints = [cp1, cp2]
-
-    env = SailingEnv(cfg, checkpoints=checkpoints, render_mode="human")
-    env = FlattenSailingObs(env)
-
-    observation, info = env.reset()
 
     print("Initializing Proximal Policy Optimization (PPO-Clip) Agent...")
     ppo_agent = PPOAgent(
-        state_dim=13,
-        action_dim=1,
-        lr=2e-4,
-        clip_ratio=0.2,
-        epochs=15
+        state_dim=cfg['PPO']['state_dim'],
+        action_dim=cfg['PPO']['action_dim'],
+        hidden_dim=cfg['PPO']['hidden_dim'],
+        clip_ratio=cfg['PPO']['clip_ratio'],
+        epochs=cfg['PPO']['epochs'],
+        shared_net=cfg['PPO']['shared_net'],
     )
-    
+
     # Train for fewer episodes because PPO converges much faster than basic Actor-Critic
-    n_episodes = 1000
-    returns_ppo = train_ppo_agent(ppo_agent, env, n_episodes=n_episodes, update_timestep=4000)
+    returns_ppo = train_ppo_agent(cfg, ppo_agent)
 
-    ppo_agent.save("checkpoints/ppo_sailing.pt")
-
-    env.close()
     plt.figure(figsize=(8, 5))
         
     window = 10
@@ -54,7 +87,7 @@ if __name__ == "__main__":
     
     plt.plot(smoothed_ppo, label='PPO-Clip (Neural)', color='teal', linewidth=2)
     
-    plt.title('Proximal Policy Optimization on CartPole-v1')
+    plt.title('Proximal Policy Optimization on Boat Sailing Environment')
     plt.xlabel('Episodes')
     plt.ylabel('Sum of Rewards (Moving Average)')
     plt.legend()

@@ -55,3 +55,31 @@ polar_diagram_vals:
 
 
 plot: False
+
+
+PPO:
+  state_dim: 13
+  action_dim: 1
+  hidden_dim: 128
+  clip_ratio: 0.2
+  epochs: 5
+  shared_net: False
+
+train:
+  n_episodes: 1000
+  update_timestep: 4000
+
+  # roba che prima era in PPOAgent e che vogliamo mettere in train
+  discount_factor: 0.99
+  lr: 0.01
+  critic_loss_parameter: 0.5
+  entropy_loss_parameter: 0.01
+
+  env:
+    map_width: 100
+    map_height: 100
+    n_checkpoints: 3
+
+
+evaluate:
+  n_episodes: 100
