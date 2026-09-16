@@ -27,6 +27,7 @@ max_angle_shift: 45    # suggested value: 45 in degrees!
 map_width: 100
 map_height: 100
 water_friction: 3.0
+border_tolerance: 3.0
 
 
 # Simulation configuration

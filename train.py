@@ -2,6 +2,7 @@ import argparse
 import yaml
 import numpy as np
 import matplotlib.pyplot as plt
+import torch
 
 from source_code.environment import SailingEnv, FlattenSailingObs
 from source_code.vector_field import VecField
@@ -35,12 +36,12 @@ if __name__ == "__main__":
         action_dim=1,
         lr=2e-4,
         clip_ratio=0.2,
-        epochs=10
+        epochs=15
     )
     
     # Train for fewer episodes because PPO converges much faster than basic Actor-Critic
-    n_episodes = 500
-    returns_ppo = train_ppo_agent(ppo_agent, env, n_episodes=n_episodes, update_timestep=1000)
+    n_episodes = 1000
+    returns_ppo = train_ppo_agent(ppo_agent, env, n_episodes=n_episodes, update_timestep=2000)
 
     ppo_agent.save("checkpoints/ppo_sailing.pt")
 
