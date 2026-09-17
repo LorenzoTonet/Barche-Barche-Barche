@@ -2,32 +2,140 @@ import argparse
 import yaml
 import numpy as np
 import matplotlib.pyplot as plt
+
+import torch
 import torch.optim as optim
+from torch.distributions import Beta
+import torch.nn as nn
 
-from source_code.environment import SailingEnv, FlattenSailingObs, create_random_environment
-from source_code.vector_field import VecField
-from source_code.map_elements import Checkpoint
-from source_code.PPO_beta import train_ppo_agent, PPOAgent
+from source_code.environment import FlattenSailingObs, create_random_environment
+from source_code.PPO import PPOAgent
 
 
-def train_ppo_agent(config, agent, buffer_size):
+def policy_update(config, agent, optimizer):
+    """ Copiato da Panizzon
+    """
+    if len(agent.buffer) == 0:
+        return
+
+    # 1. Unpack the buffer
+    states = torch.tensor(np.array([t[0] for t in agent.buffer]), dtype=torch.float32)
+    actions = torch.tensor(np.array([t[1] for t in agent.buffer]), dtype=torch.float32)
+    rewards = [t[2] for t in agent.buffer]
+    next_states = np.array([t[3] for t in agent.buffer])
+    dones = [t[4] for t in agent.buffer]
+    truncateds = [t[5] for t in agent.buffer] 
+    old_log_probs = torch.tensor(np.array([t[6] for t in agent.buffer]), dtype=torch.float32)
+
+    # RETURNS 
+    next_states_tensor = torch.tensor(next_states, dtype=torch.float32)
+    with torch.no_grad():
+        _, _, next_state_values = agent.network(next_states_tensor)
+    next_state_values = next_state_values.squeeze()
+
+    returns = []
+    discounted_sum = 0
+    for i in reversed(range(len(rewards))):
+        if dones[i]:
+            discounted_sum = 0
+        elif truncateds[i]:
+            discounted_sum = next_state_values[i].item()
+        discounted_sum = rewards[i] + config['train']['discount_factor'] * discounted_sum
+        returns.insert(0, discounted_sum)
+
+    returns = torch.tensor(returns, dtype=torch.float32)
+
+    # PART 2: Compute Advantages
+    with torch.no_grad():
+        _, _, state_values = agent.network(states)
+    state_values = state_values.squeeze()
+
+    advantages = agent.compute_advantages(returns, state_values, old_log_probs, old_log_probs)
+
+    # PART 3: Update Policy
+    batch_size = config['train']['buffer_size']//config['train']['n_batches']
+
+    for _ in range(agent.epochs):
+        # shuffle for every epoch
+        indices = torch.randperm(config['train']['buffer_size'])
+
+        for start_idx in range(0, config['train']['buffer_size'], batch_size):
+            batch_indices = indices[start_idx:start_idx + batch_size]
+
+            b_states = states[batch_indices]
+            b_actions = actions[batch_indices]
+            b_returns = returns[batch_indices]
+            b_old_log_probs = old_log_probs[batch_indices]
+            b_advantages = advantages[batch_indices]
+
+            # Recalculate probabilities and values under the CURRENT, continually updating network
+            alpha, beta, state_values = agent.network(b_states)
+            state_values = state_values.squeeze()
+            
+            dist = Beta(alpha, beta)
+            
+            actions_raw = ((b_actions + 1) / 2).clamp(1e-6, 1 - 1e-6).unsqueeze(-1)  # (N,) -> (N,1)
+            curr_log_probs = dist.log_prob(actions_raw).squeeze(-1)                
+            
+            # 4. Calculate PPO Ratio: r(theta) = pi_new / pi_old = exp(log_new - log_old)
+            ratios = torch.exp(curr_log_probs - b_old_log_probs)
+            
+            # 5. Calculate Clipped Surrogate Objective
+            surr1 = ratios * b_advantages
+            surr2 = torch.clamp(ratios, 1.0 - agent.clip_ratio, 1.0 + agent.clip_ratio) * b_advantages
+            
+            # Actor Loss: maximize surrogate (minimize negative surrogate)
+            actor_loss = -torch.min(surr1, surr2).mean()
+            
+            # Critic Loss: MSE between V(s) and returns
+            critic_loss = nn.MSELoss()(state_values, b_returns)
+            
+            # Entropy Bonus (optional, encourages exploration)
+            entropy = dist.entropy().mean()
+            
+            # Total Loss formulation
+            loss = actor_loss + config['train']['critic_loss_parameter'] * critic_loss - config['train']['entropy_loss_parameter'] * entropy
+            
+            # Backpropagation
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+                
+    # Clear the buffer after the batch update is complete
+    agent.clear_buffer()
+
+
+def train_ppo_agent(config, agent):
     """
     Train a Proximal Policy Optimization (PPO-Clip) agent in the SailingEnv environment.
+    
+    PARTE 1: Collect trajectories
+    for a number of episodes, collect trajectories by interacting with the environment using the current policy. 
+    store the states in a buffer that, every buffer_size steps, will be used to update the policy.
+    every env_reset_every episodes, re-generate the environment to introduce variability in the training process.
+    
+    
+    PARTE 2: Compute Advantages
+    written in compute_advantages function, called inside policy_update.
+
+    PARTE 3: Update Policy
+    written in policy_update function, called every buffer_size steps.
     """
     
     optimizer = optim.Adam(agent.network.parameters(), lr=config['train']['lr'])
-    returns = np.zeros(config['train']['n_episodes'])
-    
-    # TMP
-    loss = 0
 
-    # PARTE 1: Collect trajectories
+    returns = np.zeros(config['train']['n_episodes'])
+    timestep_counter = 0
+
+    # PARTE 1: Collect Trajectories
     for i in range(config['train']['n_episodes']):
         print("Starting episode {}/{}".format(i + 1, config['train']['n_episodes']))
-        if i % config["train"]["reset_every"] == 0:
+        if i % config["train"]["env_reset_every"] == 0:
             env = create_random_environment(config)
+            env = FlattenSailingObs(env) 
 
         state, _ = env.reset()
+
         terminated = False
         truncated = False
 
@@ -42,45 +150,10 @@ def train_ppo_agent(config, agent, buffer_size):
             returns[i] += reward
             timestep_counter += 1
 
-            if timestep_counter == buffer_size:
-                loss = 0
-                advantages = agent.compute_advantages()
-                agent.update()
+            if timestep_counter == cfg["train"]["buffer_size"]:
+                policy_update(config, agent, optimizer)
 
-    # PARTE 2: Compute Advantages
-    # PARTE 3: Compute Returns
-    # PARTE 4: Update Policy
-
-    
-    
-
-    for i in range(config['train']['n_episodes']):
-        print("Starting episode {}/{}".format(i + 1, config['train']['n_episodes']))
-
-        # create random environment for each episode
-        env = create_random_environment(config)
-        state = env.reset()
-        done = False
-        episode_return = 0
-
-        while not done:
-            action, log_prob, value = agent.select_action(state)
-            next_state, reward, done, _ = env.step(action)
-            agent.store_transition(state, action, reward, log_prob, value)
-            state = next_state
-            episode_return += reward
-            timestep_counter += 1
-
-        returns[i] = episode_return
-
-
-
-    # Backpropagation
-    optimizer.zero_grad()
-    loss.backward()
-    optimizer.step()
-
-    return agent
+    return returns
 
 
 if __name__ == "__main__":

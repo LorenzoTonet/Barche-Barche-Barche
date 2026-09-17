@@ -1,13 +1,8 @@
 import torch
-import torch.nn as nn
-import torch.optim as optim
 from torch.distributions import Beta
-import gymnasium as gym
+
 import numpy as np
 
-from source_code.environment import SailingEnv, FlattenSailingObs
-from source_code.vector_field import VecField
-from source_code.map_elements import Checkpoint
 
 class ActorCriticNetwork(torch.nn.Module):
     def __init__(self, input_dim, hidden_dimension = 128, action_dim = 1):
@@ -42,6 +37,7 @@ class ActorCriticNetwork(torch.nn.Module):
         state_value = self.critic(x)
         return action_alpha, action_beta, state_value
 
+
 class SharedActorCriticNetwork(torch.nn.Module):
     def __init__(self, input_dim, hidden_dimension = 128, action_dim = 1):
         super(SharedActorCriticNetwork, self).__init__()
@@ -73,6 +69,7 @@ class SharedActorCriticNetwork(torch.nn.Module):
 
         return action_alpha, action_beta, state_value
 
+
 class PPOAgent():
     def __init__(self,
                     state_dim: int = 13,
@@ -92,8 +89,6 @@ class PPOAgent():
             self.network = ActorCriticNetwork(input_dim=self.state_dimension, hidden_dimension= self.hidden_dimention, action_dim= self.action_dimension)
         else:
             self.network = SharedActorCriticNetwork(input_dim=self.state_dimension, hidden_dimension= self.hidden_dimention, action_dim= self.action_dimension)
-
-        self.optimizer = optim.Adam(self.network.parameters(), lr=lr)
 
         # Buffer to store trajectories for the batch update
         self.buffer = []
@@ -121,76 +116,6 @@ class PPOAgent():
     def clear_buffer(self):
         self.buffer = []
 
-    def update(self):
-        """ Copiato da Panizzon
-        """
-        if len(self.buffer) == 0:
-            return
-
-        # 1. Unpack the buffer
-        states = torch.tensor(np.array([t[0] for t in self.buffer]), dtype=torch.float32)
-        actions = torch.tensor(np.array([t[1] for t in self.buffer]), dtype=torch.float32)
-        rewards = [t[2] for t in self.buffer]
-        next_states = np.array([t[3] for t in self.buffer])
-        dones = [t[4] for t in self.buffer]
-        truncateds = [t[5] for t in self.buffer] 
-        old_log_probs = torch.tensor(np.array([t[6] for t in self.buffer]), dtype=torch.float32)
-
-        next_states_tensor = torch.tensor(next_states, dtype=torch.float32)
-        with torch.no_grad():
-            _, _, next_state_values = self.network(next_states_tensor)
-        next_state_values = next_state_values.squeeze()
-
-        returns = []
-        discounted_sum = 0
-        for i in reversed(range(len(rewards))):
-            if dones[i]:
-                discounted_sum = 0
-            elif truncateds[i]:
-                discounted_sum = next_state_values[i].item()
-            discounted_sum = rewards[i] + self.discount_factor * discounted_sum
-            returns.insert(0, discounted_sum)
-
-        returns = torch.tensor(returns, dtype=torch.float32)
-
-        for _ in range(self.epochs):
-            # Recalculate probabilities and values under the CURRENT, continually updating network
-            alpha, beta, state_values = self.network(states)
-            state_values = state_values.squeeze()
-            
-            dist = Beta(alpha, beta)
-            
-            actions_raw = ((actions + 1) / 2).clamp(1e-6, 1 - 1e-6).unsqueeze(-1)  # (N,) -> (N,1)
-            curr_log_probs = dist.log_prob(actions_raw).squeeze(-1)                
-            # Calculate Advantage
-            # Advantage must be detached so gradients don't flow backward through the target calculation
-            advantages = returns - state_values.detach()
-            advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
-            
-            # 4. Calculate PPO Ratio: r(theta) = pi_new / pi_old = exp(log_new - log_old)
-            ratios = torch.exp(curr_log_probs - old_log_probs)
-            
-            # 5. Calculate Clipped Surrogate Objective
-            surr1 = ratios * advantages
-            surr2 = torch.clamp(ratios, 1.0 - self.clip_ratio, 1.0 + self.clip_ratio) * advantages
-            
-            # Actor Loss: maximize surrogate (minimize negative surrogate)
-            actor_loss = -torch.min(surr1, surr2).mean()
-            
-            # Critic Loss: MSE between V(s) and returns
-            critic_loss = nn.MSELoss()(state_values, returns)
-            
-            # Entropy Bonus (optional, encourages exploration)
-            entropy = dist.entropy().mean()
-            
-            # Total Loss formulation
-            loss = actor_loss + self.critic_loss_parameter * critic_loss - self.entropy_loss_parameter * entropy
-            
-
-                    
-        # Clear the buffer after the batch update is complete
-        self.clear_buffer()
-
     def save(self, path: str):
         torch.save({
             "network_state_dict": self.network.state_dict(),
@@ -203,72 +128,13 @@ class PPOAgent():
         checkpoint = torch.load(path, weights_only=True)
         self.network.load_state_dict(checkpoint["network_state_dict"])
 
-    def compute_advantages(self):
-        if len(self.buffer) == 0:
-                    return
-        
-        # 1. Unpack the buffer
-        states = torch.tensor(np.array([t[0] for t in self.buffer]), dtype=torch.float32)
-        actions = torch.tensor(np.array([t[1] for t in self.buffer]), dtype=torch.float32)
-        rewards = [t[2] for t in self.buffer]
-        next_states = np.array([t[3] for t in self.buffer])
-        dones = [t[4] for t in self.buffer]
-        truncateds = [t[5] for t in self.buffer] 
-        old_log_probs = torch.tensor(np.array([t[6] for t in self.buffer]), dtype=torch.float32)
-        
+    def compute_advantages(self, returns, state_values, old_log_probs, curr_log_probs):
+        """
+        TODO: implement a more sophisticated advantage estimation method, such as GAE (Generalized Advantage Estimation) or other methods
+        """
+        # Advantage must be detached so gradients don't flow backward through the target calculation
+        advantages = returns - state_values.detach()
+        advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
 
-def train_ppo_agent(config: dict) -> list:
-    """
-    Executes the PPO training loop.
-    Collects a fixed number of timesteps across episodes before triggering the epoch update.
-    """
+        return advantages
 
-
-    # Train for fewer episodes because PPO converges much faster than basic Actor-Critic
-    n_episodes = config['train']['n_episodes']
-    update_timestep = config['train']['update_timestep']
-    
-    cp1 = Checkpoint(np.array([20.0, 20.0]), radius=5.0, number=1)
-    cp2 = Checkpoint(np.array([40.0, 10.0]), radius=5.0, number=2)
-    checkpoints = [cp1, cp2]
-
-    env = SailingEnv(config, checkpoints=checkpoints, render_mode="human")
-    env = FlattenSailingObs(env)
-
-    observation, info = env.reset()
-    
-    env.close()
-
-    
-    for i in range(n_episodes):
-        print("Starting episode {}/{}".format(i + 1, n_episodes))
-        state, _ = env.reset()
-        done = False
-        truncated = False
-        
-        while not (done or truncated):
-            action, log_prob = ppo_agent.get_action(state)
-            next_state, reward, done, truncated, _ = env.step(action)
-            
-            is_terminal = done and not truncated
-            
-            # Store data in agent's rollout buffer
-            ppo_agent.store_transition((state, action, reward, next_state, is_terminal, truncated, log_prob))
-            
-            state = next_state
-            returns[i] += reward
-            timestep_counter += 1
-            
-            # Trigger PPO update if we have collected enough timesteps
-            if timestep_counter % update_timestep == 0:
-                ppo_agent.update()
-                
-        if (i + 1) % 500 == 0:
-            print(f"[PPO-Clip] Episode {i+1:4d} | Last Return: {returns[i]:.0f}")
-
-    
-    ppo_agent.save("checkpoints/ppo_sailing.pt")
-
-    return returns
-        
-            
