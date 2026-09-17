@@ -24,15 +24,15 @@ speed_variance: 0.2    # suggested value: 0.2
 max_angle_shift: 45    # suggested value: 45 in degrees!
 
 # Map configuration
-map_width: 100
-map_height: 100
+map_width: 50
+map_height: 50
 water_friction: 3.0
 border_tolerance: 0.0
 
 
 # Simulation configuration
 dt: 0.1
-max_steps: 1000
+max_steps: 2000
 
 
 # Rendering configuration
@@ -78,9 +78,8 @@ train:
   reset_every: 10 # Every n episodes re-generate the environment
 
   env:
-    map_width: 100
-    map_height: 100
     n_checkpoints: 3
+    variable_n_checkpoints: False   # if True, n_checkpoints is the maximum number of checkpoints
 
 
 evaluate:

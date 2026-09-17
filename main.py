@@ -4,7 +4,7 @@ import numpy as np
 
 import pygame
 
-from source_code.environment import SailingEnv
+from source_code.environment import SailingEnv, create_random_environment
 from source_code.vector_field import VecField
 from source_code.map_elements import Checkpoint
 
@@ -21,12 +21,8 @@ if __name__ == "__main__":
         print(f"Config file {args.config} not found. Exiting.")
         raise SystemExit(1)
 
-    goal = Checkpoint(np.array([80.0, 80.0]), radius=5.0, number=3)
-    cp1 = Checkpoint(np.array([20.0, 20.0]), radius=5.0, number=1)
-    cp2 = Checkpoint(np.array([50.0, 50.0]), radius=5.0, number=2)
-    checkpoints = [cp1, cp2, goal]
+    env = create_random_environment(cfg)
 
-    env = SailingEnv(cfg, checkpoints=checkpoints, render_mode="human")
     observation, info = env.reset()
     env.render()
 
@@ -51,7 +47,6 @@ if __name__ == "__main__":
     
             obs, reward, terminated, truncated, info = env.step(action)
             env.render()
-
             print(obs["next_checkpoint_relative"][2])
             if terminated or truncated:
                 obs, info = env.reset()
