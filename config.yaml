@@ -75,6 +75,8 @@ train:
   critic_loss_parameter: 0.5
   entropy_loss_parameter: 0.01
 
+  reset_every: 10 # Every n episodes re-generate the environment
+
   env:
     map_width: 100
     map_height: 100

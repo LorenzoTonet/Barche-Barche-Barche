@@ -42,7 +42,6 @@ class ActorCriticNetwork(torch.nn.Module):
         state_value = self.critic(x)
         return action_alpha, action_beta, state_value
 
-
 class SharedActorCriticNetwork(torch.nn.Module):
     def __init__(self, input_dim, hidden_dimension = 128, action_dim = 1):
         super(SharedActorCriticNetwork, self).__init__()
@@ -204,8 +203,19 @@ class PPOAgent():
         checkpoint = torch.load(path, weights_only=True)
         self.network.load_state_dict(checkpoint["network_state_dict"])
 
-
-
+    def compute_advantages(self):
+        if len(self.buffer) == 0:
+                    return
+        
+        # 1. Unpack the buffer
+        states = torch.tensor(np.array([t[0] for t in self.buffer]), dtype=torch.float32)
+        actions = torch.tensor(np.array([t[1] for t in self.buffer]), dtype=torch.float32)
+        rewards = [t[2] for t in self.buffer]
+        next_states = np.array([t[3] for t in self.buffer])
+        dones = [t[4] for t in self.buffer]
+        truncateds = [t[5] for t in self.buffer] 
+        old_log_probs = torch.tensor(np.array([t[6] for t in self.buffer]), dtype=torch.float32)
+        
 
 def train_ppo_agent(config: dict) -> list:
     """

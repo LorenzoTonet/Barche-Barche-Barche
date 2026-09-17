@@ -10,20 +10,49 @@ from source_code.map_elements import Checkpoint
 from source_code.PPO_beta import train_ppo_agent, PPOAgent
 
 
-def train_ppo_agent(config, agent):
+def train_ppo_agent(config, agent, buffer_size):
     """
     Train a Proximal Policy Optimization (PPO-Clip) agent in the SailingEnv environment.
     """
     
     optimizer = optim.Adam(agent.network.parameters(), lr=config['train']['lr'])
-
+    returns = np.zeros(config['train']['n_episodes'])
+    
     # TMP
     loss = 0
 
     # PARTE 1: Collect trajectories
+    for i in range(config['train']['n_episodes']):
+        print("Starting episode {}/{}".format(i + 1, config['train']['n_episodes']))
+        if i % config["train"]["reset_every"] == 0:
+            env = create_random_environment(config)
+
+        state, _ = env.reset()
+        terminated = False
+        truncated = False
+
+        while not (terminated or truncated):
+            action, log_prob = agent.get_action(state)
+            next_state, reward, terminated, truncated, _ = env.step(action)
+
+            is_terminal = terminated and not truncated
+
+            agent.store_transition((state, action, reward, next_state, is_terminal, truncated, log_prob))
+            state = next_state
+            returns[i] += reward
+            timestep_counter += 1
+
+            if timestep_counter == buffer_size:
+                loss = 0
+                advantages = agent.compute_advantages()
+                agent.update()
+
+    # PARTE 2: Compute Advantages
+    # PARTE 3: Compute Returns
+    # PARTE 4: Update Policy
+
     
-    returns = np.zeros(config['train']['n_episodes'])
-    timestep_counter = 0
+    
 
     for i in range(config['train']['n_episodes']):
         print("Starting episode {}/{}".format(i + 1, config['train']['n_episodes']))
