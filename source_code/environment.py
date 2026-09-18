@@ -409,12 +409,13 @@ def create_random_environment(config: dict) -> SailingEnv:
     else:
         n_checkpoints = config["train"]["env"]["n_checkpoints"]
 
+    zone_width = config["map_width"] / (n_checkpoints + 1)
+
     for i in range(n_checkpoints):
         # devo dividere la mappa in n_checkpoints+1 zone per evitare che i checkpoint siano troppo vicini. Dopodiché prendo un punto random in quella zona
         # devo ricordarmi che n+1 perché lo start sarà nella zona 0, il primo checkpoint nella zona 1, ecc. L'altezza è quella di tutta la mappa, diciamo 
         # che la stiamo dividendo in fasce
-
-        zone_width = config["map_width"] / (n_checkpoints + 1)
+        
         current_zone_start = (i + 1) * zone_width
         current_zone_end = (i + 2) * zone_width
 
@@ -430,7 +431,7 @@ def create_random_environment(config: dict) -> SailingEnv:
 
     # change randomly the initial position of the boat 
     env.initial_boat_position = np.array([
-        int(np.random.randint(0, config["map_width"] / (n_checkpoints + 1))),
+        int(np.random.randint(0, zone_width)),
         int(np.random.randint(0, config["map_height"]))
     ])
 
