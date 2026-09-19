@@ -58,28 +58,28 @@ plot: False
 
 
 PPO:
-  state_dim: 13
+  state_dim: 17
   action_dim: 1
-  hidden_dim: 128
+  hidden_dim: 256
   clip_ratio: 0.2
   epochs: 15
   shared_net: False
 
 train:
-  n_episodes: 1000
+  n_episodes: 2000
   buffer_size: 4000
-  n_batches: 4
+  n_batches: 8
 
   # roba che prima era in PPOAgent e che vogliamo mettere in train
   discount_factor: 0.99
-  lr: 0.01
+  lr: 0.001
   critic_loss_parameter: 0.5
   entropy_loss_parameter: 0.01
 
-  env_reset_every: 10 # Every n episodes re-generate the environment
+  env_reset_every: 20 # Every n episodes re-generate the environment
 
   env:
-    n_checkpoints: 2
+    n_checkpoints: 1
     variable_n_checkpoints: False   # if True, n_checkpoints is the maximum number of checkpoints
 
 

@@ -37,7 +37,9 @@ class FlattenSailingObs(gym.ObservationWrapper):
             np.array([obs["boat_speed"]], dtype=np.float32),
             np.array([np.sin(angle), np.cos(angle)], dtype=np.float32),
             np.asarray(obs["wind_vector"], dtype=np.float32),
+            np.asarray(obs["next_checkpoint_pos"], dtype=np.float32),
             np.asarray(obs["next_checkpoint_relative"], dtype=np.float32),
+            np.asarray(obs["next_next_checkpoint_pos"], dtype=np.float32),
             np.asarray(obs["next_next_checkpoint_relative"], dtype=np.float32),
         ])
 
@@ -81,7 +83,9 @@ class SailingEnv(gym.Env):
             "boat_speed": spaces.Box(low=-np.inf, high=np.inf, dtype=np.float32),
             "boat_angle": spaces.Box(low=-np.pi, high=np.pi, dtype=np.float32),
             "wind_vector": spaces.Box(low=np.array([-np.inf, -np.inf]), high=np.array([np.inf, np.inf]), dtype=np.float32),
+            "next_checkpoint_pos": spaces.Box(low=np.array([-np.inf, -np.inf]), high=np.array([np.inf, np.inf]), dtype=np.float32),
             "next_checkpoint_relative": spaces.Box(low=np.array([0, 0, 0]), high=np.array([config["map_width"], config["map_height"], np.inf]), dtype=np.float32),
+            "next_next_checkpoint_pos": spaces.Box(low=np.array([-np.inf, -np.inf]), high=np.array([np.inf, np.inf]), dtype=np.float32),
             "next_next_checkpoint_relative": spaces.Box(low=np.array([0, 0, 0]), high=np.array([config["map_width"], config["map_height"], np.inf]), dtype=np.float32)
         })
 
@@ -108,25 +112,22 @@ class SailingEnv(gym.Env):
         boat_speed = self.state["boat_speed"]
         boat_angle = self.state["boat_angle"]
         wind_vector = self.state["wind_vector"]
-        next_checkpoint_idx = self.state["next_checkpoint_idx"]
+        idx = self.state["next_checkpoint_idx"]
 
-        if next_checkpoint_idx < self.n_checkpoints:
-            next_checkpoint = self.checkpoints[next_checkpoint_idx]
-            next_next_checkpoint = self.checkpoints[next_checkpoint_idx + 1] if next_checkpoint_idx + 1 < self.n_checkpoints else None
-        else:
-            next_checkpoint = None
-            next_next_checkpoint = None
+        last = self.n_checkpoints - 1
+        next_checkpoint = self.checkpoints[min(idx, last)]
+        next_next_checkpoint = self.checkpoints[min(idx + 1, last)]
 
-        observation = {
+        return {
             "boat_position": boat_position,
             "boat_speed": boat_speed,
             "boat_angle": boat_angle,
             "wind_vector": wind_vector,
-            "next_checkpoint_relative": self._calc_relative_dist_(next_checkpoint) if next_checkpoint else np.array([0, 0, 0]),
-            "next_next_checkpoint_relative": self._calc_relative_dist_(next_next_checkpoint) if next_next_checkpoint else np.array([0, 0, 0])
+            "next_checkpoint_pos": next_checkpoint.position,
+            "next_checkpoint_relative": self._calc_relative_dist_(next_checkpoint),
+            "next_next_checkpoint_pos": next_next_checkpoint.position,
+            "next_next_checkpoint_relative": self._calc_relative_dist_(next_next_checkpoint),
         }
-
-        return observation
     
     def _create_initial_state(self):
         return {
@@ -424,6 +425,7 @@ def create_random_environment(config: dict) -> SailingEnv:
 
         radius = 5.0
         checkpoints.append(Checkpoint(position=np.array([int(x), int(y)]), radius=radius, number = i+1))
+        print("=====NEW ENVIRONMENT=====")
         print(f"Checkpoint {i+1}: position=({x:.2f}, {y:.2f}), radius={radius}, number={i+1}")
 
     # Create the environment

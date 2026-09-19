@@ -72,7 +72,7 @@ class SharedActorCriticNetwork(torch.nn.Module):
 
 class PPOAgent():
     def __init__(self,
-                    state_dim: int = 13,
+                    state_dim: int = 17,
                     action_dim: int = 1,
                     hidden_dim: int = 128,
                     clip_ratio: float = 0.2, 
@@ -137,4 +137,20 @@ class PPOAgent():
         advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
 
         return advantages
+    
+    def compute_advantages_GAE(self, returns, state_values, old_log_probs, curr_log_probs, labda, omega):
+            """
+            TODO: implement a more sophisticated advantage estimation method, such as GAE (Generalized Advantage Estimation) or other methods
+            """
+            # Advantage must be detached so gradients don't flow backward through the target calculation
+            
+            advantages = np.zeros((self.returns), dtype=np.float32)
+            last_advantage = 0
+            last_value = state_values[:, -1]
+
+            for t in reversed(range(len(self.returns))):
+                mask = 1
+            advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
+    
+            return advantages
 
