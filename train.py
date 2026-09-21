@@ -34,7 +34,7 @@ def policy_update(config, agent, optimizer):
     next_state_values = next_state_values.squeeze()
 
     returns = []
-    discounted_sum = 0
+    discounted_sum = 0 if (dones[-1] or truncateds[-1]) else next_state_values[-1].item()
     for i in reversed(range(len(rewards))):
         if dones[i]:
             discounted_sum = 0
@@ -150,7 +150,7 @@ def train_ppo_agent(config, agent):
             returns[i] += reward
             timestep_counter += 1
 
-            if timestep_counter == cfg["train"]["buffer_size"]:
+            if timestep_counter % cfg["train"]["buffer_size"] == 0:
                 policy_update(config, agent, optimizer)
 
     return returns
