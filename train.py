@@ -27,6 +27,8 @@ def policy_update(config, agent, optimizer):
     truncateds = [t[5] for t in agent.buffer] 
     old_log_probs = torch.tensor(np.array([t[6] for t in agent.buffer]), dtype=torch.float32)
 
+    gamma = config['train']['discount_factor']
+    lamb = config['train']['gae_lam']
     # RETURNS 
     next_states_tensor = torch.tensor(next_states, dtype=torch.float32)
     with torch.no_grad():
@@ -40,7 +42,7 @@ def policy_update(config, agent, optimizer):
             discounted_sum = 0
         elif truncateds[i]:
             discounted_sum = next_state_values[i].item()
-        discounted_sum = rewards[i] + config['train']['discount_factor'] * discounted_sum
+        discounted_sum = rewards[i] + gamma * discounted_sum
         returns.insert(0, discounted_sum)
 
     returns = torch.tensor(returns, dtype=torch.float32)
@@ -49,8 +51,15 @@ def policy_update(config, agent, optimizer):
     with torch.no_grad():
         _, _, state_values = agent.network(states)
     state_values = state_values.squeeze()
-
-    advantages = agent.compute_advantages(returns, state_values, old_log_probs, old_log_probs)
+    if config['train']['advantages_mode'] == 'Naive':
+        advantages = agent.compute_advantages(returns, state_values, old_log_probs, old_log_probs)
+    elif config['train']['advantages_mode'] == 'GAE':
+        advantages= agent.compute_advantages_gae(
+        rewards, state_values.numpy(), next_state_values.numpy(),
+        dones, truncateds, gamma, lamb)
+        advantages = torch.as_tensor(advantages, dtype=torch.float32)
+    else:
+        raise Exception("advantage mode not valid. Choose from Naive or GAE. Go to config.yaml")
 
     # PART 3: Update Policy
     batch_size = config['train']['buffer_size']//config['train']['n_batches']

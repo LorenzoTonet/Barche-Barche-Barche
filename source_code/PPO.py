@@ -138,19 +138,19 @@ class PPOAgent():
 
         return advantages
     
-    def compute_advantages_GAE(self, returns, state_values, old_log_probs, curr_log_probs, labda, omega):
-        """
-        TODO: implement a more sophisticated advantage estimation method, such as GAE (Generalized Advantage Estimation) or other methods
-        """
-        # Advantage must be detached so gradients don't flow backward through the target calculation
+    def compute_advantages_gae(self, rewards, values, next_values,
+                           terminated, truncated, gamma, lamb):
         
-        advantages = np.zeros((self.returns), dtype=np.float32)
-        last_advantage = 0
-        last_value = state_values[:, -1]
+        T = len(rewards)
+        adv = np.zeros(T, dtype=np.float32)
+        gae = 0.0
+        for t in reversed(range(T)):
+            nonterminal = 1.0 - float(terminated[t])                  
+            continues   = 1.0 - float(terminated[t] or truncated[t])
+            delta = rewards[t] + gamma * next_values[t] * nonterminal - values[t]
+            gae = delta + gamma * lamb * continues * gae
+            adv[t] = gae
 
-        for t in reversed(range(len(self.returns))):
-            mask = 1
-        advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
-
-        return advantages
+        adv_norm = (adv - adv.mean()) / (adv.std() + 1e-8)
+        return adv_norm
 

@@ -61,14 +61,17 @@ PPO:
   state_dim: 17
   action_dim: 1
   hidden_dim: 256
-  clip_ratio: 0.3
-  epochs: 20
+  clip_ratio: 0.2
+  epochs: 10
   shared_net: False
 
 train:
-  n_episodes: 2000
+  n_episodes: 3000
   buffer_size: 3000
-  n_batches: 8
+  n_batches: 64
+  #advantages_mode: "Naive"
+  advantages_mode: "GAE"
+  gae_lam: 0.95
 
   # roba che prima era in PPOAgent e che vogliamo mettere in train
   discount_factor: 0.95
@@ -79,7 +82,7 @@ train:
   env_reset_every: 50 # Every n episodes re-generate the environment
 
   env:
-    n_checkpoints: 4
+    n_checkpoints: 3
     variable_n_checkpoints: True   # if True, n_checkpoints is the maximum number of checkpoints
 
 

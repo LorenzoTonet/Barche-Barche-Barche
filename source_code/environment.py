@@ -170,7 +170,7 @@ class SailingEnv(gym.Env):
         terminated = False
         truncated = False
 
-        if self.steps >= self.max_steps:
+        if self.steps > self.max_steps:
             truncated = True
 
         if self.state["next_checkpoint_idx"] >= self.n_checkpoints:
