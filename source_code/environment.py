@@ -411,7 +411,7 @@ def create_random_environment(config: dict) -> SailingEnv:
         n_checkpoints = config["train"]["env"]["n_checkpoints"]
 
     zone_width = config["map_width"] / (n_checkpoints + 1)
-
+    print("=====NEW ENVIRONMENT=====")
     for i in range(n_checkpoints):
         # devo dividere la mappa in n_checkpoints+1 zone per evitare che i checkpoint siano troppo vicini. Dopodiché prendo un punto random in quella zona
         # devo ricordarmi che n+1 perché lo start sarà nella zona 0, il primo checkpoint nella zona 1, ecc. L'altezza è quella di tutta la mappa, diciamo 
@@ -425,9 +425,9 @@ def create_random_environment(config: dict) -> SailingEnv:
 
         radius = 5.0
         checkpoints.append(Checkpoint(position=np.array([int(x), int(y)]), radius=radius, number = i+1))
-        print("=====NEW ENVIRONMENT=====")
+        
         print(f"Checkpoint {i+1}: position=({x:.2f}, {y:.2f}), radius={radius}, number={i+1}")
-        print("=========================")
+    print("=========================")
     # Create the environment
     env = SailingEnv(config=config, checkpoints=checkpoints, render_mode=config["mode"])
 
