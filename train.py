@@ -181,6 +181,7 @@ if __name__ == "__main__":
 
     # Train for fewer episodes because PPO converges much faster than basic Actor-Critic
     returns_ppo = train_ppo_agent(cfg, ppo_agent)
+    ppo_agent.save("checkpoints/ppo_sailing.pt")
 
     plt.figure(figsize=(8, 5))
         

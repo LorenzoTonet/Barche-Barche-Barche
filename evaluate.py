@@ -2,7 +2,7 @@ import yaml
 import numpy as np
 from source_code.environment import SailingEnv, FlattenSailingObs
 from source_code.map_elements import Checkpoint
-from source_code.PPO_beta import PPOAgent
+from source_code.PPO import PPOAgent
 
 with open("./config.yaml") as f:
     cfg = yaml.safe_load(f)
@@ -13,7 +13,15 @@ checkpoints = [cp1]
 env = SailingEnv(cfg, checkpoints=checkpoints, render_mode="human")
 env = FlattenSailingObs(env)
 
-agent = PPOAgent(state_dim=13, action_dim=1)
+agent = PPOAgent(
+        state_dim=cfg['PPO']['state_dim'],
+        action_dim=cfg['PPO']['action_dim'],
+        hidden_dim=cfg['PPO']['hidden_dim'],
+        clip_ratio=cfg['PPO']['clip_ratio'],
+        epochs=cfg['PPO']['epochs'],
+        shared_net=cfg['PPO']['shared_net'],
+    )
+
 agent.load("checkpoints/ppo_sailing.pt")
 
 state, _ = env.reset()

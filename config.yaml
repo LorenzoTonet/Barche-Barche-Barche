@@ -62,7 +62,7 @@ PPO:
   action_dim: 1
   hidden_dim: 256
   clip_ratio: 0.2
-  epochs: 15
+  epochs: 20
   shared_net: False
 
 train:
@@ -76,7 +76,7 @@ train:
   critic_loss_parameter: 0.5
   entropy_loss_parameter: 0.01
 
-  env_reset_every: 20 # Every n episodes re-generate the environment
+  env_reset_every: 50 # Every n episodes re-generate the environment
 
   env:
     n_checkpoints: 1

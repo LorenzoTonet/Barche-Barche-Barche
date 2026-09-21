@@ -427,7 +427,7 @@ def create_random_environment(config: dict) -> SailingEnv:
         checkpoints.append(Checkpoint(position=np.array([int(x), int(y)]), radius=radius, number = i+1))
         print("=====NEW ENVIRONMENT=====")
         print(f"Checkpoint {i+1}: position=({x:.2f}, {y:.2f}), radius={radius}, number={i+1}")
-
+        print("=========================")
     # Create the environment
     env = SailingEnv(config=config, checkpoints=checkpoints, render_mode=config["mode"])
 
