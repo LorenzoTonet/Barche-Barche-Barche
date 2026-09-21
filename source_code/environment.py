@@ -194,7 +194,7 @@ class SailingEnv(gym.Env):
             return 50.0
 
         if self.state["out_of_borders"]:
-            return -50.0
+            return -100.0
         
         next_checkpoint = self.checkpoints[next_idx]
         current_dist = np.linalg.norm(self.state["boat_position"] - next_checkpoint.position)
