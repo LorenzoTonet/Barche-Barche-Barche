@@ -11,6 +11,9 @@ import torch.nn as nn
 from source_code.environment import FlattenSailingObs, create_random_environment
 from source_code.PPO import PPOAgent
 
+import os
+import time
+import shutil
 
 def policy_update(config, agent, optimizer):
     """ Copiato da Panizzon
@@ -164,6 +167,43 @@ def train_ppo_agent(config, agent):
 
     return returns
 
+def save_training_run(returns, model_path, cfg, base_dir="experiments"):
+    """
+    TODO documentation
+    """
+    timestamp = time.strftime("%Y%m%d_%H%M%S")
+    run_dir = os.path.join(base_dir, f"Training_{timestamp}")
+    os.makedirs(run_dir, exist_ok=True)
+ 
+    model_dst = os.path.join(run_dir, os.path.basename(model_path))
+    shutil.copy(model_path, model_dst)
+ 
+    window = 10
+    smoothed_returns = np.convolve(returns, np.ones(window) / window, mode='valid')
+ 
+    plt.figure(figsize=(8, 5))
+    plt.plot(smoothed_returns, label='PPO-Clip (Neural)', color='teal', linewidth=2)
+    plt.title(f'Proximal Policy Optimization on Boat Sailing Environment ({cfg["train"]["advantages_mode"]})')
+    plt.xlabel('Episodes')
+    plt.ylabel('Sum of Rewards (Moving Average)')
+    plt.legend()
+    plt.grid(True, linestyle='--', alpha=0.6)
+    plt.tight_layout()
+    plt.savefig(os.path.join(run_dir, "returns.png"))
+    plt.close()
+ 
+    config_path = os.path.join(run_dir, "config.txt")
+    with open(config_path, "w") as f:
+        for section, params in cfg.items():
+            f.write(f"[{section}]\n")
+            if isinstance(params, dict):
+                for k, v in params.items():
+                    f.write(f"{k} = {v}\n")
+            else:
+                f.write(f"{params}\n")
+            f.write("\n")
+ 
+    return run_dir
 
 if __name__ == "__main__":
     torch.set_num_threads(1)  # con batch=1 il threading intra-op è solo overhead, peggio ancora su cluster
@@ -195,18 +235,5 @@ if __name__ == "__main__":
     returns_ppo = train_ppo_agent(cfg, ppo_agent)
     ppo_agent.save("checkpoints/ppo_sailing.pt")
 
-    plt.figure(figsize=(8, 5))
-        
-    window = 10
-    smoothed_ppo = np.convolve(returns_ppo, np.ones(window)/window, mode='valid')
-    
-    plt.plot(smoothed_ppo, label='PPO-Clip (Neural)', color='teal', linewidth=2)
-    
-    plt.title(f'Proximal Policy Optimization on Boat Sailing Environment ({cfg["advantages_mode"]})')
-    plt.xlabel('Episodes')
-    plt.ylabel('Sum of Rewards (Moving Average)')
-    plt.legend()
-    plt.grid(True, linestyle='--', alpha=0.6)
-    plt.tight_layout()
-    plt.show()
+    save_training_run(returns= returns_ppo, model_path="checkpoints/ppo_sailing.pt", cfg=cfg)
 
