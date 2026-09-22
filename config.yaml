@@ -60,26 +60,26 @@ plot: False
 PPO:
   state_dim: 17
   action_dim: 1
-  hidden_dim: 256
+  hidden_dim: 128
   clip_ratio: 0.2
-  epochs: 10
+  epochs: 15
   shared_net: False
 
 train:
   n_episodes: 3000
-  buffer_size: 3000
+  buffer_size: 4000
   n_batches: 64
   #advantages_mode: "Naive"
   advantages_mode: "GAE"
   gae_lam: 0.95
 
   # roba che prima era in PPOAgent e che vogliamo mettere in train
-  discount_factor: 0.95
-  lr: 0.001
+  discount_factor: 0.99
+  lr: 0.0005
   critic_loss_parameter: 0.5
   entropy_loss_parameter: 0.01
 
-  env_reset_every: 50 # Every n episodes re-generate the environment
+  env_reset_every: 20 # Every n episodes re-generate the environment
 
   env:
     n_checkpoints: 3

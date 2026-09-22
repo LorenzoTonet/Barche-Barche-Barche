@@ -166,6 +166,9 @@ def train_ppo_agent(config, agent):
 
 
 if __name__ == "__main__":
+    torch.set_num_threads(1)  # con batch=1 il threading intra-op è solo overhead, peggio ancora su cluster
+    torch.distributions.Distribution.set_default_validate_args(False)
+    
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', type=str, default='./config.yaml', help="Path to config file")
     args = parser.parse_args()
@@ -199,7 +202,7 @@ if __name__ == "__main__":
     
     plt.plot(smoothed_ppo, label='PPO-Clip (Neural)', color='teal', linewidth=2)
     
-    plt.title('Proximal Policy Optimization on Boat Sailing Environment')
+    plt.title(f'Proximal Policy Optimization on Boat Sailing Environment ({cfg["advantages_mode"]})')
     plt.xlabel('Episodes')
     plt.ylabel('Sum of Rewards (Moving Average)')
     plt.legend()
