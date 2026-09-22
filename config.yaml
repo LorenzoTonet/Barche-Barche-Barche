@@ -66,7 +66,7 @@ PPO:
   shared_net: False
 
 train:
-  n_episodes: 3000
+  n_episodes: 100
   buffer_size: 4000
   n_batches: 64
   #advantages_mode: "Naive"
@@ -82,7 +82,7 @@ train:
   env_reset_every: 20 # Every n episodes re-generate the environment
 
   env:
-    n_checkpoints: 3
+    n_checkpoints: 4
     variable_n_checkpoints: True   # if True, n_checkpoints is the maximum number of checkpoints
 
 
