@@ -152,6 +152,7 @@ class SailingEnv(gym.Env):
 
     def step(self, action):
         info = {}
+        info["failed"] = False
 
         update = update_boat(self.state, action, self.dt, self.polar_diagram)
 
@@ -181,6 +182,7 @@ class SailingEnv(gym.Env):
         if self.state["out_of_borders"]:
             terminated = True
             info["message"] = "Out of borders"
+            info["failed"] = True
             print("OOB")
 
         self.wind_vec_field.update()
@@ -207,10 +209,9 @@ class SailingEnv(gym.Env):
 
         step_penalty = -0.1
 
-        # bonus one-shot, non ricorrente
         checkpoint_bonus = 30.0 if self.state["just_reached_checkpoint"] else 0.0
 
-        total_reward = progress * 150 + checkpoint_bonus + step_penalty
+        total_reward = progress * 10 + checkpoint_bonus + step_penalty
         return total_reward
     
     def create_polar_diagram(self, config, polar_diagram_vals):
@@ -398,7 +399,7 @@ class SailingEnv(gym.Env):
 
 
 
-def create_random_environment(config: dict) -> SailingEnv:
+def create_random_environment(config: dict, verbose:bool = True) -> SailingEnv:
     """
     Create a random SailingEnv environment with random checkpoints and wind field.
     """
@@ -411,7 +412,8 @@ def create_random_environment(config: dict) -> SailingEnv:
         n_checkpoints = config["train"]["env"]["n_checkpoints"]
 
     zone_width = config["map_width"] / (n_checkpoints + 1)
-    print("=====NEW ENVIRONMENT=====")
+    
+    if verbose: print("=====NEW ENVIRONMENT=====")
     for i in range(n_checkpoints):
         # devo dividere la mappa in n_checkpoints+1 zone per evitare che i checkpoint siano troppo vicini. Dopodiché prendo un punto random in quella zona
         # devo ricordarmi che n+1 perché lo start sarà nella zona 0, il primo checkpoint nella zona 1, ecc. L'altezza è quella di tutta la mappa, diciamo 
@@ -426,8 +428,8 @@ def create_random_environment(config: dict) -> SailingEnv:
         radius = 5.0
         checkpoints.append(Checkpoint(position=np.array([int(x), int(y)]), radius=radius, number = i+1))
         
-        print(f"Checkpoint {i+1}: position=({x:.2f}, {y:.2f}), radius={radius}, number={i+1}")
-    print("=========================")
+        if verbose:print(f"Checkpoint {i+1}: position=({x:.2f}, {y:.2f}), radius={radius}, number={i+1}")
+    if verbose:print("=========================")
     # Create the environment
     env = SailingEnv(config=config, checkpoints=checkpoints, render_mode=config["mode"])
 
