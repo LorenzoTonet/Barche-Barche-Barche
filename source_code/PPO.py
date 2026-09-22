@@ -95,7 +95,7 @@ class PPOAgent():
 
     def get_action(self, state, deterministic: bool = False):
         s_tensor = torch.as_tensor(state, dtype=torch.float32).unsqueeze(0)
-        with torch.no_grad():
+        with torch.inference_mode():
                 if deterministic:
                     alpha, beta, _ = self.network(s_tensor)
                     action = (alpha - 1) / (alpha + beta - 2)
