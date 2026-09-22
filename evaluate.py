@@ -1,18 +1,18 @@
 import yaml
 import numpy as np
-from source_code.environment import SailingEnv, FlattenSailingObs
+from source_code.environment import SailingEnv, FlattenSailingObs, create_random_environment
 from source_code.map_elements import Checkpoint
 from source_code.PPO import PPOAgent
 
 with open("./config.yaml") as f:
     cfg = yaml.safe_load(f)
 
-cp1 = Checkpoint(np.array([20.0, 20.0]), radius=5.0, number=1)
-cp2 = Checkpoint(np.array([30.0, 40.0]), radius=5.0, number=2)
-cp3 = Checkpoint(np.array([40.0, 10.0]), radius=5.0, number=3)
-checkpoints = [cp1, cp2, cp3]
+#cp1 = Checkpoint(np.array([20.0, 20.0]), radius=5.0, number=1)
+#cp2 = Checkpoint(np.array([30.0, 40.0]), radius=5.0, number=2)
+#cp3 = Checkpoint(np.array([40.0, 10.0]), radius=5.0, number=3)
+#checkpoints = [cp1, cp2, cp3]
 
-env = SailingEnv(cfg, checkpoints=checkpoints, render_mode="human")
+env = create_random_environment(cfg)
 env = FlattenSailingObs(env)
 
 agent = PPOAgent(
@@ -24,7 +24,7 @@ agent = PPOAgent(
         shared_net=cfg['PPO']['shared_net'],
     )
 
-agent.load("checkpoints/ppo_sailing.pt")
+agent.load("checkpoints/shit_model.pt")
 
 state, _ = env.reset()
 done = truncated = False
