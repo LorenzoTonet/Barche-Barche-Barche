@@ -211,7 +211,7 @@ class SailingEnv(gym.Env):
 
         checkpoint_bonus = 30.0 if self.state["just_reached_checkpoint"] else 0.0
 
-        total_reward = progress * 10 + checkpoint_bonus + step_penalty
+        total_reward = progress * 150 + checkpoint_bonus + step_penalty
         return total_reward
     
     def create_polar_diagram(self, config, polar_diagram_vals):
