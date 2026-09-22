@@ -24,7 +24,7 @@ agent = PPOAgent(
         shared_net=cfg['PPO']['shared_net'],
     )
 
-agent.load("checkpoints/shit_model.pt")
+agent.load("checkpoints/ppo_sailing.pt")
 
 state, _ = env.reset()
 done = truncated = False
