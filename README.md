@@ -1,24 +1,30 @@
 # Barche-Barche-Barche
-This repository contains the project for the final exam of the course "Reinforcement Learning"
+This repository contains the project for the final exam of the course "Reinforcement Learning 2026"
 
 > *A sailboat or sailing boat is a boat propelled partly or entirely by sails and is smaller than a sailing ship. Distinctions in what constitutes a sailing boat and ship vary by region and maritime culture.*  
 > — Wikipedia
 
+- this project is an RL agent
+- the goal is
 The goal of the task is to reach a **GOAL** while passing through a sequence of **CHECKPOINTS**.
+- the techniques used are PPO GAE ...
+
 
 ---
 ## SPECIFICATIONS
-STATE space = [position2d_boat, position2d_goal, position2d_CP1, ..., position2d_CPn, boat_rotation, boat_velocity, wind_vectorial_field, collected_CPs]
-
+- action space
+- observtions space
 ACTION space = [rotate_boat]
-
 OBSERVATION space = [full_observability]
+REWARD FUNCTION
+---
+## PHYSICS
+- environment
+- boat movement formule
 
 ---
-## MOVEMENT PHYSICS
+## QUICK RESULTS
 
-TODO
+## REPOSITORY STRUCTURE
 
----
-## FRAMEWORK
-This project will rely on gymnasium environment due to its standardized interface and facility of use.
+## HOW TO RUN
