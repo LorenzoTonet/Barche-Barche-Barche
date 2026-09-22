@@ -17,7 +17,7 @@ agent = PPOAgent(
         shared_net=cfg['PPO']['shared_net'],
     )
 
-agent.load("checkpoints/shit_model.pt")
+agent.load("checkpoints/ppo_sailing.pt")
 
 cfg["max_steps"] = 1500
 cfg["train"]["env"]["variable_n_checkpoints"] = False
