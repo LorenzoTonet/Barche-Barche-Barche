@@ -3,7 +3,7 @@
 physics
 /checkpoints/
 /experiments/
-*.png
+
 /ester_egg/
 
 # Byte-compiled / optimized / DLL files
