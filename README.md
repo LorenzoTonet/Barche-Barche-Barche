@@ -7,7 +7,8 @@ This repository contains the project for the final exam of the course "Reinforce
 The goal of this project is to produce an agent able to ride a sail boat to reach a **GOAL** while passing through a sequence of ordered **CHECKPOINTS** in the smallest time possible. The main difficulty of this task is that to move the boat its necessary to align the boat to a favorable angle in respect to the wind (In literature this is commonly adressed as [Zermelo's navigation problem](https://en.wikipedia.org/wiki/Zermelo%27s_navigation_problem)). 
 Since both the state and the action spaces are continous, the main techniques used to optimize this kind of task involve Deep Neural Networks as function approximators for the value function and the policy. 
 
---- ## 1. Action Space
+--- 
+## 1. Action Space
 
 Continuous action space consisting of a single control input:
 
