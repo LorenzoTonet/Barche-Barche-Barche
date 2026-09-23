@@ -2,7 +2,6 @@
 .gitignore
 physics
 /checkpoints/
-/images/
 /experiments/
 *.png
 /ester_egg/
