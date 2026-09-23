@@ -41,7 +41,7 @@ The relative angle between the boat heading and the wind direction is computed a
 ```math
 \Delta\theta =
 \left|
-\operatorname{atan2}
+atan2
 \left(
 \sin(\theta_w-\theta'),
 \cos(\theta_w-\theta')
