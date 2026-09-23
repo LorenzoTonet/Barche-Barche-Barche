@@ -7,6 +7,7 @@ import pygame
 from scipy.interpolate import CubicSpline
 import matplotlib.pyplot as plt
 import math
+import random
 
 from source_code.boat_physics import update_boat
 from source_code.vector_field import VecField

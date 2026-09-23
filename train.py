@@ -15,7 +15,7 @@ import os
 import time
 import shutil
 
-def policy_update(config, agent, optimizer):
+def policy_update(config, agent, optimizer, scheduler):
     """ Copiato da Panizzon
     """
     if len(agent.buffer) == 0:
@@ -112,6 +112,7 @@ def policy_update(config, agent, optimizer):
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
+            scheduler.step()
                 
     # Clear the buffer after the batch update is complete
     agent.clear_buffer()
@@ -135,6 +136,8 @@ def train_ppo_agent(config, agent):
     """
     
     optimizer = optim.Adam(agent.network.parameters(), lr=config['train']['lr'])
+    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=config['train']['lr_step_size']*config['PPO']['epochs']*config['train']['n_batches'], gamma=config['train']['lr_gamma'])
+
 
     returns = np.zeros(config['train']['n_episodes'])
     timestep_counter = 0
@@ -143,7 +146,16 @@ def train_ppo_agent(config, agent):
     for i in range(config['train']['n_episodes']):
         print("Starting episode {}/{}".format(i + 1, config['train']['n_episodes']))
         if i % config["train"]["env_reset_every"] == 0:
-            env = create_random_environment(config)
+            env_cfg = config.deepcopy()
+            if i < 100:
+                env_cfg["train"]["env"]["n_checkpoints"] = 1 if config["train"]["env"]["n_checkpoints"] >= 1 else config["train"]["env"]["n_checkpoints"]
+            elif i < 200:
+                env_cfg["train"]["env"]["n_checkpoints"] = 2 if config["train"]["env"]["n_checkpoints"] >= 2 else config["train"]["env"]["n_checkpoints"]
+            elif i < 300:
+                env_cfg["train"]["env"]["n_checkpoints"] = 3 if config["train"]["env"]["n_checkpoints"] >= 3 else config["train"]["env"]["n_checkpoints"]
+            elif i < 400:
+                env_cfg["train"]["env"]["n_checkpoints"] = 4 if config["train"]["env"]["n_checkpoints"] >= 4 else config["train"]["env"]["n_checkpoints"]
+            env = create_random_environment(env_cfg)
             env = FlattenSailingObs(env) 
 
         state, _ = env.reset()
@@ -163,7 +175,7 @@ def train_ppo_agent(config, agent):
             timestep_counter += 1
 
             if timestep_counter % cfg["train"]["buffer_size"] == 0:
-                policy_update(config, agent, optimizer)
+                policy_update(config, agent, optimizer, scheduler)
 
     return returns
 

@@ -75,7 +75,9 @@ train:
 
   # roba che prima era in PPOAgent e che vogliamo mettere in train
   discount_factor: 0.99
-  lr: 0.0005
+  lr: 0.01
+  lr_step_size: 1 # decay every n buffers
+  lr_gamma: 0.995 # decay factor for learning rate. for 6000 episodes, lr = 0.01 decays good like this
   critic_loss_parameter: 0.5
   entropy_loss_parameter: 0.01
 
