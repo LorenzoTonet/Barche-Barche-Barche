@@ -99,7 +99,7 @@ class PPOAgent():
                     alpha, beta, _ = self.network(s_tensor)
                     action = (alpha - 1) / (alpha + beta - 2)
                     action = 2 * action - 1  # Scale to [-1, 1]
-                    return action.item(), None  # Return the mean action for deterministic behavior
+                    return action.item(), None  # Return the mode action for deterministic behavior
                 else:
                     alpha, beta, _ = self.network(s_tensor)
                     dist = Beta(alpha, beta)
@@ -127,9 +127,9 @@ class PPOAgent():
         checkpoint = torch.load(path, weights_only=True)
         self.network.load_state_dict(checkpoint["network_state_dict"])
 
-    def compute_advantages(self, returns, state_values, old_log_probs, curr_log_probs):
+    def compute_advantages(self, returns, state_values):
         """
-        TODO: implement a more sophisticated advantage estimation method, such as GAE (Generalized Advantage Estimation) or other methods
+       
         """
         # Advantage must be detached so gradients don't flow backward through the target calculation
         advantages = returns - state_values.detach()

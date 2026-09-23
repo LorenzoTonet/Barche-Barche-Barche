@@ -3,7 +3,7 @@ import numpy as np
 import imageio
 
 from source_code.Environment.environment import SailingEnv, FlattenSailingObs
-from source_code.Environment.environment_generators import create_random_environment_old, reate_random_environment
+from source_code.Environment.environment_generators import create_random_environment_old, create_random_environment
 from source_code.Environment.map_elements import Checkpoint
 from source_code.Agent.PPO import PPOAgent
 from source_code.Other.render_multi_boats import render_multi_boats
@@ -29,7 +29,7 @@ agent = PPOAgent(
         shared_net=cfg['PPO']['shared_net'],
     )
 
-agent.load("experiments/good model/really_good_model.pt")
+agent.load("experiments/Training_20260923_225211/ppo_sailing.pt")
 
 # in single run mode we simulate one run and render it
 if cfg['evaluate']['mode'] == "single_run":

@@ -98,7 +98,6 @@ for n_cp in checkpoint_counts:
 print("=== BENCHMARK COMPLETED ===\n")
 
 # PLOTS (By claude)
-
 # Assicuriamoci che i checkpoint siano ordinati
 checkpoint_counts = sorted(checkpoint_counts)
 

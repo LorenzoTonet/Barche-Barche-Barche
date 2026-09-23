@@ -66,7 +66,7 @@ PPO:
   shared_net: False
 
 train:
-  n_episodes: 1000
+  n_episodes: 3000
   buffer_size: 4000
   n_batches: 64
   #advantages_mode: "Naive"
@@ -75,9 +75,9 @@ train:
 
   # roba che prima era in PPOAgent e che vogliamo mettere in train
   discount_factor: 0.99
-  lr: 0.01
-  lr_step_size: 1 # decay every n buffers
-  lr_gamma: 1.0 # decay factor for learning rate. for 6000 episodes, lr = 0.01 decays good like this
+  lr: 0.001
+  lr_step_size: 10 # decay every n buffers (for 1000 steps circa meno quasi 135 buffers)
+  lr_gamma: 0.9 # decay factor for learning rate. for 6000 episodes, lr = 0.01 decays good like this
   critic_loss_parameter: 0.5
   entropy_loss_parameter: 0.01
 
