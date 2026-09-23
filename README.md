@@ -8,7 +8,8 @@ The goal of this project is to produce an agent able to ride a sail boat to reac
 Since both the state and the action spaces are continous, the main techniques used to optimize this kind of task involve Deep Neural Networks as function approximators for the value function and the policy. 
 
 --- 
-## 1. Action Space
+## ENVIRONMENT SPECIFICATIONS
+### 1. Action Space
 
 Continuous action space consisting of a single control input:
 
@@ -16,9 +17,7 @@ Continuous action space consisting of a single control input:
 | :--- | :---: | :--- |
 | **Rotation intensity** | `[-1.0, 1.0]` | Controls the steering / rotational force applied to the boat |
 
----
-
-## 2. Observation Space
+### 2. Observation Space
 
 The observation space is a continuous vector representing the current state of the boat, the environment, and upcoming checkpoints:
 
@@ -33,9 +32,7 @@ The observation space is a continuous vector representing the current state of t
 | **Next-Next checkpoint position** | `Vector2D` | Absolute coordinates of the target after the next checkpoint $(x_{cp2}, y_{cp2})$ |
 | **Next-Next checkpoint relative** | `Vector3D` | Relative metrics to next-next checkpoint $[dx_{cp2}, dy_{cp2}, \text{distance}_{cp2}]$ |
 
----
-
-## 3. Reward Function
+### 3. Reward Function
 
 The reward function combines continuous potential-based reward shaping with sparse pointwise event signals:
 
@@ -64,7 +61,54 @@ The physics of the environment including the movement of the boat and the manage
 
 ---
 ## QUICK RESULTS
-![Agent](https://github.com/LorenzoTonet/Barche-Barche-Barche/blob/main/images/nice_video.gif.mp4)
-## REPOSITORY STRUCTURE
+<p align="center">
+  <img src="https://github.com/LorenzoTonet/Barche-Barche-Barche/blob/main/images/MultipleRuns.gif?raw=true" width="40%" />
+</p>
 
+<p align="center">
+  <img src="https://github.com/LorenzoTonet/Barche-Barche-Barche/blob/main/images/benchmark%20good%20model.png?raw=true" width="70%" />
+</p>
+
+---
+## REPOSITORY STRUCTURE
+```bash
+.
+├── images
+│   ├── benchmark good model.png
+│   └── MultipleRuns.gif
+├── source_code
+│   ├── boat_physics.py
+│   ├── environment.py
+│   ├── manual_play.py
+│   ├── map_elements.py
+│   ├── PPO.py
+│   ├── render_multi_boats.py
+│   └── vector_field.py
+├── README.md
+├── EnvironmentPhysics.md
+├── requirements.txt
+├── config.yaml
+├── benchmark.py
+├── evaluate.py
+├── train.py
+└── main.py
+```
+
+---
 ## HOW TO RUN
+
+For building the code of the project first build a local enviroment and install the *requirements*:
+```bash
+python3 -m venv venv 
+source ./venv/bin/activate
+pip3 install -r requirements.txt
+```
+Then to run an example episode it is sufficent to change the "mode" parameters in `config.yaml` into one between "human" to play the game, "random" to sample action randomly:
+```bash
+python main.py
+```
+If the selected mode is "agent" also provide the relative path to the `.pt` file of the model in the run command as in the example:
+```bash
+python main.py --agent ./models/my_amazing_boat_rider_from_Trieste.pt
+```
+
