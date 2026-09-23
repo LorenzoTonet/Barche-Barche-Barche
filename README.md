@@ -64,8 +64,33 @@ The physics of the environment including the movement of the boat and the manage
 
 ---
 ## QUICK RESULTS
-![Agent](https://github.com/LorenzoTonet/Barche-Barche-Barche/blob/main/images/MultipleRuns.gif)
-![Benchmark](https://github.com/LorenzoTonet/Barche-Barche-Barche/blob/main/images/benchmark%20good%20model.png)
-## REPOSITORY STRUCTURE
+<p align="center">
+  <img src="https://github.com/LorenzoTonet/Barche-Barche-Barche/blob/main/images/MultipleRuns.gif?raw=true" width="40%" />
+</p>
 
+<p align="center">
+  <img src="https://github.com/LorenzoTonet/Barche-Barche-Barche/blob/main/images/benchmark%20good%20model.png?raw=true" width="70%" />
+</p>
+
+---
+## REPOSITORY STRUCTURE
+WORK IN PROGRESS
+
+---
 ## HOW TO RUN
+
+For building the code of the project first build a local enviroment and install the *requirements*:
+```bash
+python3 -m venv venv 
+source ./venv/bin/activate
+pip3 install -r requirements.txt
+```
+Then to run an example episode it is sufficent to change the "mode" parameters in config.yaml into one between "human" to play the game, "random" to sample action randomly:
+```bash
+python main.py
+```
+If the selected mode is "agent" also provide the relative path to the .pt file of the model in the run command as in the example:
+```bash
+python main.py --agent ./models/my_amazing_boat_rider_from_Trieste.pt
+```
+
