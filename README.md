@@ -8,7 +8,8 @@ The goal of this project is to produce an agent able to ride a sail boat to reac
 Since both the state and the action spaces are continous, the main techniques used to optimize this kind of task involve Deep Neural Networks as function approximators for the value function and the policy. 
 
 --- 
-## 1. Action Space
+## ENVIRONMENT SPECIFICATIONS
+### 1. Action Space
 
 Continuous action space consisting of a single control input:
 
@@ -16,9 +17,7 @@ Continuous action space consisting of a single control input:
 | :--- | :---: | :--- |
 | **Rotation intensity** | `[-1.0, 1.0]` | Controls the steering / rotational force applied to the boat |
 
----
-
-## 2. Observation Space
+### 2. Observation Space
 
 The observation space is a continuous vector representing the current state of the boat, the environment, and upcoming checkpoints:
 
@@ -33,9 +32,7 @@ The observation space is a continuous vector representing the current state of t
 | **Next-Next checkpoint position** | `Vector2D` | Absolute coordinates of the target after the next checkpoint $(x_{cp2}, y_{cp2})$ |
 | **Next-Next checkpoint relative** | `Vector3D` | Relative metrics to next-next checkpoint $[dx_{cp2}, dy_{cp2}, \text{distance}_{cp2}]$ |
 
----
-
-## 3. Reward Function
+### 3. Reward Function
 
 The reward function combines continuous potential-based reward shaping with sparse pointwise event signals:
 
@@ -74,7 +71,28 @@ The physics of the environment including the movement of the boat and the manage
 
 ---
 ## REPOSITORY STRUCTURE
-WORK IN PROGRESS
+```bash
+.
+├── images
+│   ├── benchmark good model.png
+│   └── MultipleRuns.gif
+├── source_code
+│   ├── boat_physics.py
+│   ├── environment.py
+│   ├── manual_play.py
+│   ├── map_elements.py
+│   ├── PPO.py
+│   ├── render_multi_boats.py
+│   └── vector_field.py
+├── README.md
+├── EnvironmentPhysics.md
+├── requirements.txt
+├── config.yaml
+├── benchmark.py
+├── evaluate.py
+├── train.py
+└── main.py
+```
 
 ---
 ## HOW TO RUN
