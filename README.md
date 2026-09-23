@@ -64,7 +64,8 @@ The physics of the environment including the movement of the boat and the manage
 
 ---
 ## QUICK RESULTS
-![Agent](https://github.com/LorenzoTonet/Barche-Barche-Barche/blob/main/images/nice_video.gif.mp4)
+![Agent](https://github.com/LorenzoTonet/Barche-Barche-Barche/blob/main/images/MultipleRuns.gif)
+![Benchmark](https://github.com/LorenzoTonet/Barche-Barche-Barche/blob/main/images/benchmark%20good%20model.png)
 ## REPOSITORY STRUCTURE
 
 ## HOW TO RUN
