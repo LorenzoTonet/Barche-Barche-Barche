@@ -1,7 +1,9 @@
 import argparse
+from networkx import config
 import yaml
 import numpy as np
 import matplotlib.pyplot as plt
+from copy import deepcopy
 
 import torch
 import torch.optim as optim
@@ -146,14 +148,14 @@ def train_ppo_agent(config, agent):
     for i in range(config['train']['n_episodes']):
         print("Starting episode {}/{}".format(i + 1, config['train']['n_episodes']))
         if i % config["train"]["env_reset_every"] == 0:
-            env_cfg = config.deepcopy()
-            if i < 100:
+            env_cfg = deepcopy(config)
+            if i < 500:
                 env_cfg["train"]["env"]["n_checkpoints"] = 1 if config["train"]["env"]["n_checkpoints"] >= 1 else config["train"]["env"]["n_checkpoints"]
-            elif i < 200:
+            elif i < 1000:
                 env_cfg["train"]["env"]["n_checkpoints"] = 2 if config["train"]["env"]["n_checkpoints"] >= 2 else config["train"]["env"]["n_checkpoints"]
-            elif i < 300:
+            elif i < 1400:
                 env_cfg["train"]["env"]["n_checkpoints"] = 3 if config["train"]["env"]["n_checkpoints"] >= 3 else config["train"]["env"]["n_checkpoints"]
-            elif i < 400:
+            elif i < 1800:
                 env_cfg["train"]["env"]["n_checkpoints"] = 4 if config["train"]["env"]["n_checkpoints"] >= 4 else config["train"]["env"]["n_checkpoints"]
             env = create_random_environment(env_cfg)
             env = FlattenSailingObs(env) 
