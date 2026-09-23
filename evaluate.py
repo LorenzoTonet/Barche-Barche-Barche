@@ -3,6 +3,8 @@ import numpy as np
 from source_code.environment import SailingEnv, FlattenSailingObs, create_random_environment
 from source_code.map_elements import Checkpoint
 from source_code.PPO import PPOAgent
+from source_code.render_multi_boats import render_multi_boats
+import imageio
 
 with open("./config.yaml") as f:
     cfg = yaml.safe_load(f)
@@ -24,14 +26,21 @@ agent = PPOAgent(
         shared_net=cfg['PPO']['shared_net'],
     )
 
-agent.load("checkpoints/ppo_sailing.pt")
+agent.load("checkpoints/really_good_model.pt")
 
-state, _ = env.reset()
-done = truncated = False
-while not (done or truncated):
-    action, _ = agent.get_action(state, deterministic=True)
-    state, reward, done, truncated, info = env.step(action)
-    print(f"Reward = {reward}")
-    env.render()
+# in single run mode we simulate one run and render it
+if cfg['evaluate']['mode'] == "single_run":
+    state, _ = env.reset()
+    done = truncated = False
+    while not (done or truncated):
+        action, _ = agent.get_action(state, deterministic=True)
+        state, reward, done, truncated, info = env.step(action)
+        print(f"Reward = {reward}")
+        env.render()
+
+# in save multi run mode we simulate multiple runs on the same env, render them on a single video and save the video to disk
+if cfg['evaluate']['mode'] == "save_multi_run":
+
+    render_multi_boats(cfg, env, agent)
 
 env.close()
