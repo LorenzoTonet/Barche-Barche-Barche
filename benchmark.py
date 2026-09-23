@@ -1,11 +1,20 @@
 import yaml
 import numpy as np
-from source_code.environment import SailingEnv, FlattenSailingObs, create_random_environment
-from source_code.map_elements import Checkpoint
-from source_code.PPO import PPOAgent
 import matplotlib.pyplot as plt
+import argparse
 
-with open("./config.yaml") as f:
+from source_code.Environment.environment import SailingEnv, FlattenSailingObs
+from source_code.Environment.environment_generators import create_random_environment
+from source_code.Environment.map_elements import Checkpoint
+from source_code.Agent.PPO import PPOAgent
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--config', type=str, default='./config.yaml', help="Path to config file")
+parser.add_argument('--agent', type=str, default='./checkpoints/ppo_sailing.pt', help="Path to agent model to load")
+args = parser.parse_args()
+
+with open(args.config, 'r') as f:
     cfg = yaml.safe_load(f)
 
 agent = PPOAgent(
@@ -17,7 +26,7 @@ agent = PPOAgent(
         shared_net=cfg['PPO']['shared_net'],
     )
 
-agent.load("checkpoints/ppo_sailing.pt")
+agent.load(args.agent)
 
 cfg["max_steps"] = 1500
 cfg["train"]["env"]["variable_n_checkpoints"] = False

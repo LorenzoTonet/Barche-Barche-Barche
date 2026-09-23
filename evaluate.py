@@ -1,9 +1,12 @@
 import yaml
 import numpy as np
-from source_code.environment import SailingEnv, FlattenSailingObs, create_random_environment
-from source_code.map_elements import Checkpoint
-from source_code.PPO import PPOAgent
-from source_code.render_multi_boats import render_multi_boats
+import imageio
+
+from source_code.Environment.environment import SailingEnv, FlattenSailingObs
+from source_code.Environment.environment_generators import create_random_environment_old, reate_random_environment
+from source_code.Environment.map_elements import Checkpoint
+from source_code.Agent.PPO import PPOAgent
+from source_code.Other.render_multi_boats import render_multi_boats
 import imageio
 
 with open("./config.yaml") as f:
@@ -14,7 +17,7 @@ with open("./config.yaml") as f:
 #cp3 = Checkpoint(np.array([40.0, 10.0]), radius=5.0, number=3)
 #checkpoints = [cp1, cp2, cp3]
 
-env = create_random_environment(cfg)
+env = create_random_environment_old(cfg)
 env = FlattenSailingObs(env)
 
 agent = PPOAgent(
@@ -26,7 +29,7 @@ agent = PPOAgent(
         shared_net=cfg['PPO']['shared_net'],
     )
 
-agent.load("checkpoints/really_good_model.pt")
+agent.load("experiments/good model/really_good_model.pt")
 
 # in single run mode we simulate one run and render it
 if cfg['evaluate']['mode'] == "single_run":

@@ -10,12 +10,15 @@ import torch.optim as optim
 from torch.distributions import Beta
 import torch.nn as nn
 
-from source_code.environment import FlattenSailingObs, create_random_environment
-from source_code.PPO import PPOAgent
-
 import os
 import time
 import shutil
+
+from source_code.Environment.environment import FlattenSailingObs
+from source_code.Environment.environment import create_random_environment_old
+from source_code.Agent.PPO import PPOAgent
+
+
 
 def policy_update(config, agent, optimizer, scheduler):
     """ Copiato da Panizzon
@@ -157,7 +160,7 @@ def train_ppo_agent(config, agent):
                 env_cfg["train"]["env"]["n_checkpoints"] = 3 if config["train"]["env"]["n_checkpoints"] >= 3 else config["train"]["env"]["n_checkpoints"]
             elif i < 1800:
                 env_cfg["train"]["env"]["n_checkpoints"] = 4 if config["train"]["env"]["n_checkpoints"] >= 4 else config["train"]["env"]["n_checkpoints"]
-            env = create_random_environment(env_cfg)
+            env = create_random_environment_old(env_cfg)
             env = FlattenSailingObs(env) 
 
         state, _ = env.reset()
@@ -244,6 +247,7 @@ if __name__ == "__main__":
         epochs=cfg['PPO']['epochs'],
         shared_net=cfg['PPO']['shared_net'],
     )
+    ppo_agent.load("checkpoints/really_good_model_copy.pt")
 
     # Train for fewer episodes because PPO converges much faster than basic Actor-Critic
     returns_ppo = train_ppo_agent(cfg, ppo_agent)

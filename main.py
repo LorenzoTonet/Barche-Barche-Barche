@@ -1,13 +1,13 @@
 import argparse
 import yaml
 import numpy as np
-
 import pygame
 
-from source_code.environment import SailingEnv, create_random_environment
-from source_code.vector_field import VecField
-from source_code.map_elements import Checkpoint
-from source_code.PPO import PPOAgent
+from source_code.Environment.environment import SailingEnv
+from source_code.Environment.environment_generators import create_random_environment
+from source_code.Environment.vector_field import VecField
+from source_code.Environment.map_elements import Checkpoint
+from source_code.Agent.PPO import PPOAgent
 
 
 if __name__ == "__main__":

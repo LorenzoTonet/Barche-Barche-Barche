@@ -24,8 +24,8 @@ speed_variance: 0.2    # suggested value: 0.2
 max_angle_shift: 45    # suggested value: 45 in degrees!
 
 # Map configuration
-map_width: 100
-map_height: 100
+map_width: 50
+map_height: 50
 water_friction: 3.0
 border_tolerance: 1.0
 
@@ -66,7 +66,7 @@ PPO:
   shared_net: False
 
 train:
-  n_episodes: 6000
+  n_episodes: 1000
   buffer_size: 4000
   n_batches: 64
   #advantages_mode: "Naive"
@@ -77,7 +77,7 @@ train:
   discount_factor: 0.99
   lr: 0.01
   lr_step_size: 1 # decay every n buffers
-  lr_gamma: 0.995 # decay factor for learning rate. for 6000 episodes, lr = 0.01 decays good like this
+  lr_gamma: 1.0 # decay factor for learning rate. for 6000 episodes, lr = 0.01 decays good like this
   critic_loss_parameter: 0.5
   entropy_loss_parameter: 0.01
 
@@ -87,7 +87,7 @@ train:
     n_checkpoints: 6
     variable_n_checkpoints: True   # if True, n_checkpoints is the maximum number of checkpoints
     ckp_probability: 0.9
-    wind_range: [2.0, 4.0]
+    wind_range: [1.0, 1.5]
 
 
 
