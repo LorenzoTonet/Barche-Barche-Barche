@@ -87,4 +87,7 @@ train:
 
 
 evaluate:
-  n_episodes: 100
+  n_episodes: 30
+  # mode: "single_run" 
+  mode: "save_multi_run"
+  video_path: "images/multi_run.mp4"
