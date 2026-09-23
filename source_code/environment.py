@@ -1,3 +1,5 @@
+from random import random
+
 import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
@@ -452,6 +454,10 @@ def create_random_environment(config: dict, verbose:bool = True) -> SailingEnv:
 
     # change randomly the initial wind vector of the environment
     config["initial_wind"] = np.array([np.random.uniform(config["train"]["env"]["wind_range"][0], config["train"]["env"]["wind_range"][1]), np.random.uniform(config["train"]["env"]["wind_range"][0], config["train"]["env"]["wind_range"][1])])
+    if random.random() < 0.5:
+        config["initial_wind"][0] *= -1
+    if random.random() < 0.5:
+        config["initial_wind"][1] *= -1
 
     # Create the environment
     env = SailingEnv(config=config, checkpoints=checkpoints, render_mode=config["mode"])
