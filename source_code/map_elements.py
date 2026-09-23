@@ -3,4 +3,3 @@ class Checkpoint:
         self.position = position
         self.number = number
         self.radius = radius
-
