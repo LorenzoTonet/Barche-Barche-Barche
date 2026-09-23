@@ -31,7 +31,7 @@ if __name__ == "__main__":
     if cfg["mode"] == "human":
 
         action = 0.0
-    
+        step = 0
         running = True
         while running:
             for event in pygame.event.get():
@@ -48,8 +48,9 @@ if __name__ == "__main__":
             action = boat_rotation
     
             obs, reward, terminated, truncated, info = env.step(action)
+            step += 1
             env.render()
-            print(obs["next_checkpoint_relative"][2])
+            print(f"Step: {step}  | Reward: {reward:.3f}  |")
             if terminated or truncated:
                 obs, info = env.reset()
     
@@ -68,18 +69,20 @@ if __name__ == "__main__":
         agent.load(args.agent)
 
         if cfg['evaluate']['mode'] == "single_run":
+            step = 0
             state, _ = env.reset()
             done = truncated = False
             while not (done or truncated):
                 action, _ = agent.get_action(state, deterministic=True)
                 state, reward, done, truncated, info = env.step(action)
-                print(f"Reward = {reward}")
+                step += 1
+                print(f"Step: {step}  | Reward: {reward:.3f}  |")
                 env.render()
 
             env.close()
 
     elif cfg["mode"] == "random":
-        
+        step = 0
         running = True
         while running:
             for event in pygame.event.get():
@@ -87,8 +90,9 @@ if __name__ == "__main__":
                     running = False
 
             action = float(env.action_space.sample()[0])
-            print(action)
             obs, reward, terminated, truncated, info = env.step(action)
+            step += 1
+            print(f"Step: {step}  | Reward: {reward:.3f}  |")
             env.render()
     
             if terminated or truncated:
