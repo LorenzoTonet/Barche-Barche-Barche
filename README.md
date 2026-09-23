@@ -57,7 +57,7 @@ R(s, a, s') = \begin{cases} +50 & \text{if all checkpoints are reached} \\ -50 &
 
 ---
 ## PHYSICS
-The physics of the environment including the movement of the boat and the management of the wind is described in [EnvironmentPhysics.md](./EnvironmentPhysics.md)
+The physics of the environment including the movement of the boat and the management of the wind is described in [EnvironmentPhysics.md](./source_code/Environment/EnvironmentPhysics.md)
 
 ---
 ## QUICK RESULTS
