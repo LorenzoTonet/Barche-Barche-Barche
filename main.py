@@ -7,11 +7,13 @@ import pygame
 from source_code.environment import SailingEnv, create_random_environment
 from source_code.vector_field import VecField
 from source_code.map_elements import Checkpoint
+from source_code.PPO import PPOAgent
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', type=str, default='./config.yaml', help="Path to config file")
+    parser.add_argument('--agent', type=str, default='./checkpoints/ppo_sailing.pt', help="Path to agent model to load")
     args = parser.parse_args()
 
     try:
@@ -53,10 +55,28 @@ if __name__ == "__main__":
     
         env.close()
 
-
     elif cfg["mode"] == "agent":
-        pass
+        agent = PPOAgent(
+        state_dim=cfg['PPO']['state_dim'],
+        action_dim=cfg['PPO']['action_dim'],
+        hidden_dim=cfg['PPO']['hidden_dim'],
+        clip_ratio=cfg['PPO']['clip_ratio'],
+        epochs=cfg['PPO']['epochs'],
+        shared_net=cfg['PPO']['shared_net'],
+    )
 
+        agent.load(args.agent)
+
+        if cfg['evaluate']['mode'] == "single_run":
+            state, _ = env.reset()
+            done = truncated = False
+            while not (done or truncated):
+                action, _ = agent.get_action(state, deterministic=True)
+                state, reward, done, truncated, info = env.step(action)
+                print(f"Reward = {reward}")
+                env.render()
+
+            env.close()
 
     elif cfg["mode"] == "random":
         
@@ -66,7 +86,7 @@ if __name__ == "__main__":
                 if event.type == pygame.QUIT:
                     running = False
 
-            action = env.action_space.sample()
+            action = float(env.action_space.sample()[0])
             print(action)
             obs, reward, terminated, truncated, info = env.step(action)
             env.render()
@@ -75,4 +95,8 @@ if __name__ == "__main__":
                 obs, info = env.reset()
     
         env.close()
+
+    else:
+        print("Invalid play mode. Choose between:")
+        print("[random', 'human', 'agent']")
 
