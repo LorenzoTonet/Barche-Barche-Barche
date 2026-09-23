@@ -24,15 +24,15 @@ speed_variance: 0.2    # suggested value: 0.2
 max_angle_shift: 45    # suggested value: 45 in degrees!
 
 # Map configuration
-map_width: 50
-map_height: 50
+map_width: 100
+map_height: 100
 water_friction: 3.0
 border_tolerance: 1.0
 
 
 # Simulation configuration
 dt: 0.1
-max_steps: 800
+max_steps: 1500
 
 
 # Rendering configuration
@@ -66,7 +66,7 @@ PPO:
   shared_net: False
 
 train:
-  n_episodes: 100
+  n_episodes: 6000
   buffer_size: 4000
   n_batches: 64
   #advantages_mode: "Naive"
@@ -82,12 +82,15 @@ train:
   env_reset_every: 20 # Every n episodes re-generate the environment
 
   env:
-    n_checkpoints: 4
+    n_checkpoints: 6
     variable_n_checkpoints: True   # if True, n_checkpoints is the maximum number of checkpoints
+    ckp_probability: 0.9
+    wind_range: [2.0, 4.0]
+
 
 
 evaluate:
   n_episodes: 30
-  # mode: "single_run" 
-  mode: "save_multi_run"
+  mode: "single_run" 
+  # mode: "save_multi_run"
   video_path: "images/multi_run.mp4"
