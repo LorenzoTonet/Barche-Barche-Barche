@@ -73,25 +73,31 @@ The physics of the environment including the movement of the boat and the manage
 ## REPOSITORY STRUCTURE
 ```bash
 .
-├── images
-│   ├── benchmark good model.png
-│   └── MultipleRuns.gif
 ├── source_code
-│   ├── boat_physics.py
-│   ├── environment.py
-│   ├── manual_play.py
-│   ├── map_elements.py
-│   ├── PPO.py
-│   ├── render_multi_boats.py
-│   └── vector_field.py
+│   ├── Agent
+│   │   ├── docs.md
+│   │   ├── PPO.py # in progress
+│   │   └── training.py
+│   ├── Environment
+│   │   ├── boat_physics.py
+│   │   ├── docs.md
+│   │   ├── environment_generators.py #documented
+│   │   ├── EnvironmentPhysics.md
+│   │   ├── environment.py
+│   │   ├── map_elements.py
+│   │   └── vector_field.py
+│   └── Other
+│       ├── docs.md
+│       └── render_multi_boats.py
 ├── README.md
-├── EnvironmentPhysics.md
-├── requirements.txt
 ├── config.yaml
+├── requirements.txt
 ├── benchmark.py
 ├── evaluate.py
 ├── train.py
 └── main.py
+
+
 ```
 
 ---
