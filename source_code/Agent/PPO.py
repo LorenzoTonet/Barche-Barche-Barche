@@ -2,7 +2,14 @@ import torch
 from torch.distributions import Beta
 import numpy as np
 
+'''
+In this file there is the logic about the Machine Learning models, including the definition of the neural backbone divided in two categories:
+- Actor Critic Network: An architechture that uses 2 different network for the critic and the actor
+- Shared AC Network: An architechture where both the A and C utilize the same net to do all the work - better efficency but noisier
 
+PPOAgent class is the actual actor that will behave in the environment during both training and inference fase
+
+'''
 class ActorCriticNetwork(torch.nn.Module):
     def __init__(self, input_dim, hidden_dimension = 128, action_dim = 1):
         super(ActorCriticNetwork, self).__init__()
@@ -99,6 +106,7 @@ class PPOAgent():
                     alpha, beta, _ = self.network(s_tensor)
                     action = (alpha - 1) / (alpha + beta - 2)
                     action = 2 * action - 1  # Scale to [-1, 1]
+                    #print(f"Alpha = {alpha.item()} | Beta = {beta.item()} | action = {action.item()}")
                     return action.item(), None  # Return the mode action for deterministic behavior
                 else:
                     alpha, beta, _ = self.network(s_tensor)

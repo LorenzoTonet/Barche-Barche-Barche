@@ -61,7 +61,6 @@ class SailingEnv(gym.Env):
         self.steps = 0
         self.max_steps = config["max_steps"]
         self.max_speed = config["max_speed"]
-        self.friction_coefficient = config["water_friction"]
         self.boat_rotation_speed = config["boat_rotation_speed"]
         self.dt = config["dt"]
 
@@ -173,6 +172,7 @@ class SailingEnv(gym.Env):
         truncated = False
 
         if self.steps > self.max_steps:
+            print()
             truncated = True
 
         if self.state["next_checkpoint_idx"] >= self.n_checkpoints:

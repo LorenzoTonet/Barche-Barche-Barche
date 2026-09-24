@@ -17,7 +17,7 @@ with open("./config.yaml") as f:
 #cp3 = Checkpoint(np.array([40.0, 10.0]), radius=5.0, number=3)
 #checkpoints = [cp1, cp2, cp3]
 
-env = create_random_environment_old(cfg)
+env = create_random_environment(cfg)
 env = FlattenSailingObs(env)
 
 agent = PPOAgent(
@@ -29,7 +29,8 @@ agent = PPOAgent(
         shared_net=cfg['PPO']['shared_net'],
     )
 
-agent.load("experiments/Training_20260923_225211/ppo_sailing.pt")
+agent.load("experiments/Training_20260924_104632/ppo_sailing.pt")
+step = 0
 
 # in single run mode we simulate one run and render it
 if cfg['evaluate']['mode'] == "single_run":
@@ -38,7 +39,8 @@ if cfg['evaluate']['mode'] == "single_run":
     while not (done or truncated):
         action, _ = agent.get_action(state, deterministic=True)
         state, reward, done, truncated, info = env.step(action)
-        print(f"Reward = {reward}")
+        step += 1
+        print(f"Step: {step}  | Reward: {reward:.3f}  |")
         env.render()
 
 # in save multi run mode we simulate multiple runs on the same env, render them on a single video and save the video to disk
