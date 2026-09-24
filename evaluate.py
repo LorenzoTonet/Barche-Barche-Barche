@@ -29,7 +29,7 @@ agent = PPOAgent(
         shared_net=cfg['PPO']['shared_net'],
     )
 
-agent.load("experiments/Training_20260924_104632/ppo_sailing.pt")
+agent.load("experiments/Training_20260924_131521/ppo_sailing.pt")
 step = 0
 
 # in single run mode we simulate one run and render it
