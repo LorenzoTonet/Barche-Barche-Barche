@@ -6,7 +6,7 @@ physics
 /images/*
 /ester_egg/
 *.mp4
-
+benchmark.png
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
