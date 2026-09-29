@@ -3,7 +3,7 @@
 physics
 /checkpoints/
 /experiments/
-
+/images/*
 /ester_egg/
 *.mp4
 
