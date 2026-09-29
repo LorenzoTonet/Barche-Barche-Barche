@@ -72,5 +72,3 @@ if __name__ == "__main__":
     os.makedirs(run_dir, exist_ok=True)
     save_training_run(returns= returns_ppo, model_path="checkpoints/ppo_sailing.pt", cfg=cfg, save_dir=run_dir)
     benchmark_agent(agent=ppo_agent, cfg=cfg, save_dir=run_dir, filename="benchmark.png", checkpoint_counts=(1,2,3,4), n_tests=200, max_steps=1500, seed = 7)
-
-
