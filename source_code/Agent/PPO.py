@@ -205,7 +205,7 @@ class PPOAgent():
 
     def compute_advantages(self, returns, state_values):
         """
-       
+        Compute A(s,a) with the naive formula R(s,a,s') - V(s) and then standardize them
         """
         # Advantage must be detached so gradients don't flow backward through the target calculation
         advantages = returns - state_values.detach()
@@ -215,6 +215,10 @@ class PPOAgent():
     
     def compute_advantages_gae(self, rewards, values, next_values,
                            terminated, truncated, gamma, lamb):
+
+        """
+        Compute A(s,a) with the Generalized Advantage Estimation technique
+        """
         
         T = len(rewards)
         adv = np.zeros(T, dtype=np.float32)
