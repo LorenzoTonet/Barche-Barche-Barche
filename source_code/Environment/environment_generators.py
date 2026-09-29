@@ -57,8 +57,8 @@ def create_random_environment(config: dict, verbose:bool = True) -> SailingEnv:
     ckp_positions = []
     while len(ckp_positions) < n_checkpoints+1:
         # random position in the map
-        x = np.random.randint(0, config["map_width"])
-        y = np.random.randint(0, config["map_height"])
+        x = np.random.randint(config["train"]["env"]["radius"], config["map_width"] - config["train"]["env"]["radius"])
+        y = np.random.randint(config["train"]["env"]["radius"], config["map_height"] - config["train"]["env"]["radius"])
 
         # compute the distance from all existing checkpoints
         distances = [np.linalg.norm(np.array([x, y]) - np.array(pos)) for pos in ckp_positions]
@@ -83,10 +83,9 @@ def create_random_environment(config: dict, verbose:bool = True) -> SailingEnv:
             random_idx = np.random.randint(0, len(ckp_positions))
             next_checkpoints.append(ckp_positions.pop(random_idx))
 
-    radius = 5.0
     for i, (x, y) in enumerate(next_checkpoints):
-        checkpoints.append(Checkpoint(position=np.array([int(x), int(y)]), radius=radius, number = i+1))
-        if verbose:print(f"Checkpoint {i+1}: position=({x:.2f}, {y:.2f}), radius={radius}, number={i+1}")
+        checkpoints.append(Checkpoint(position=np.array([int(x), int(y)]), radius=config["train"]["env"]["radius"], number = i+1))
+        if verbose:print(f"Checkpoint {i+1}: position=({x:.2f}, {y:.2f}), radius={config['train']['env']['radius']}, number={i+1}")
     if verbose:print("=========================")
 
     # change randomly the initial wind vector of the environment

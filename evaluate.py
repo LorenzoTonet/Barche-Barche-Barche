@@ -1,13 +1,13 @@
 import yaml
 import numpy as np
 import imageio
+import matplotlib.pyplot as plt
 
 from source_code.Environment.environment import SailingEnv, FlattenSailingObs
 from source_code.Environment.environment_generators import create_random_environment_old, create_random_environment
 from source_code.Environment.map_elements import Checkpoint
 from source_code.Agent.PPO import PPOAgent
 from source_code.Other.render_multi_boats import render_multi_boats
-import imageio
 
 with open("./config.yaml") as f:
     cfg = yaml.safe_load(f)
@@ -29,19 +29,27 @@ agent = PPOAgent(
         shared_net=cfg['PPO']['shared_net'],
     )
 
-agent.load("experiments/Training_20260924_131521/ppo_sailing.pt")
+agent.load("checkpoints\good_randenv_10000.pt")
 step = 0
 
 # in single run mode we simulate one run and render it
 if cfg['evaluate']['mode'] == "single_run":
+    cum_reward = []
     state, _ = env.reset()
     done = truncated = False
     while not (done or truncated):
         action, _ = agent.get_action(state, deterministic=True)
         state, reward, done, truncated, info = env.step(action)
         step += 1
-        print(f"Step: {step}  | Reward: {reward:.3f}  |")
+        cum_reward.append(reward+cum_reward[-1] if len(cum_reward) > 0 else reward)
+        print(f"Step: {step}  | Reward: {reward:.3f}  | Cumulative: {cum_reward[-1]:.3f}")
         env.render()
+    plt.plot(cum_reward)
+    plt.title("Cumulative Reward")
+    plt.xlabel("Step")
+    plt.ylabel("Cumulative Reward")
+    plt.grid()
+    plt.show()
 
 # in save multi run mode we simulate multiple runs on the same env, render them on a single video and save the video to disk
 if cfg['evaluate']['mode'] == "save_multi_run":

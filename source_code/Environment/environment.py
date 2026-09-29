@@ -205,6 +205,8 @@ class SailingEnv(gym.Env):
         # progress shaping: positivo se ci si avvicina, negativo se ci si allontana
         prev_dist = self.state["prev_dist_to_next"]
         progress = (prev_dist - current_dist)
+        if progress < 0:
+            progress *= 2.0
         
         self.state["prev_dist_to_next"] = current_dist
 
