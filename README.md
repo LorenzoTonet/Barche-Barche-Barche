@@ -77,7 +77,7 @@ The physics of the environment including the movement of the boat and the manage
 │   ├── Agent
 │   │   ├── docs.md
 │   │   ├── PPO.py # documented
-│   │   └── training.py
+│   │   └── training.py # documented
 │   ├── Environment
 │   │   ├── boat_physics.py
 │   │   ├── docs.md
