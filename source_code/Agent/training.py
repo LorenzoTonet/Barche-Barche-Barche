@@ -189,15 +189,11 @@ def train_ppo_agent(config, agent):
     return returns
 
 
-def save_training_run(returns, model_path, cfg, base_dir="experiments"):
+def save_training_run(returns, model_path, cfg, save_dir="experiments"):
     """
     Save the results at the end of the training
     """
-    timestamp = time.strftime("%Y%m%d_%H%M%S")
-    run_dir = os.path.join(base_dir, f"Training_{timestamp}")
-    os.makedirs(run_dir, exist_ok=True)
- 
-    model_dst = os.path.join(run_dir, os.path.basename(model_path))
+    model_dst = os.path.join(save_dir, os.path.basename(model_path))
     shutil.copy(model_path, model_dst)
  
     window = 10
@@ -211,10 +207,10 @@ def save_training_run(returns, model_path, cfg, base_dir="experiments"):
     plt.legend()
     plt.grid(True, linestyle='--', alpha=0.6)
     plt.tight_layout()
-    plt.savefig(os.path.join(run_dir, "returns.png"))
+    plt.savefig(os.path.join(save_dir, "returns.png"))
     plt.close()
  
-    config_path = os.path.join(run_dir, "config.txt")
+    config_path = os.path.join(save_dir, "config.txt")
     with open(config_path, "w") as f:
         for section, params in cfg.items():
             f.write(f"[{section}]\n")
@@ -225,4 +221,4 @@ def save_training_run(returns, model_path, cfg, base_dir="experiments"):
                 f.write(f"{params}\n")
             f.write("\n")
  
-    return run_dir
+    return save_dir
