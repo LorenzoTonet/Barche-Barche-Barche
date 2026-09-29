@@ -20,7 +20,9 @@ from source_code.Agent.PPO import PPOAgent
 
 
 def policy_update(config, agent, optimizer, scheduler):
-    """ Copiato da Panizzon
+    """ 
+    Optimize the policy by doing some epochs of backpropagation over the episodes in the buffer. The scheduler is used to have a better refinement of the policy
+    late in the training.
     """
     if len(agent.buffer) == 0:
         return
@@ -35,7 +37,10 @@ def policy_update(config, agent, optimizer, scheduler):
     old_log_probs = torch.tensor(np.array([t[6] for t in agent.buffer]), dtype=torch.float32)
 
     gamma = config['train']['discount_factor']
+
+    # Used for GAE
     lamb = config['train']['gae_lam']
+
     # RETURNS 
     next_states_tensor = torch.tensor(next_states, dtype=torch.float32)
     with torch.no_grad():
@@ -186,7 +191,7 @@ def train_ppo_agent(config, agent):
 
 def save_training_run(returns, model_path, cfg, base_dir="experiments"):
     """
-    TODO documentation
+    Save the results at the end of the training
     """
     timestamp = time.strftime("%Y%m%d_%H%M%S")
     run_dir = os.path.join(base_dir, f"Training_{timestamp}")
