@@ -24,9 +24,7 @@ class FlattenSailingObs(gym.ObservationWrapper):
     def __init__(self, env: gym.Env):
         super().__init__(env)
 
-        obs_dim = 13  # 2 + 1 + 2 + 2 + 3 + 3, vedi ordine sopra
-        # bound larghi generici: la normalizzazione vera la fai a valle (es. VecNormalize),
-        # qui serve solo a dichiarare correttamente lo spazio per eventuali wrapper successivi
+        obs_dim = 17 
         self.observation_space = gym.spaces.Box(
             low=-np.inf, high=np.inf, shape=(obs_dim,), dtype=np.float32
         )
@@ -310,9 +308,6 @@ class SailingEnv(gym.Env):
 
             if i == len(self.checkpoints) - 1:
                 pygame.draw.circle(canvas, (255, 0, 0), to_screen(cp.position), int(cp.radius * scale_x), 2)
-
-        # --- Origin ---
-        pygame.draw.circle(canvas, (220, 0, 0), to_screen((0, 0)), 8)
 
         # --- Boat ---
         bx, by = to_screen(self.state["boat_position"])
