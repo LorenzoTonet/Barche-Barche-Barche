@@ -29,7 +29,7 @@ agent = PPOAgent(
         shared_net=cfg['PPO']['shared_net'],
     )
 
-agent.load("checkpoints\good_randenv_10000.pt")
+agent.load("experiments/Orfeo/ppo_sailing.pt")
 step = 0
 
 # in single run mode we simulate one run and render it
