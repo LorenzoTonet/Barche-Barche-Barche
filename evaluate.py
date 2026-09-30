@@ -2,6 +2,7 @@ import yaml
 import numpy as np
 import imageio
 import matplotlib.pyplot as plt
+import argparse
 
 from source_code.Environment.environment import SailingEnv, FlattenSailingObs
 from source_code.Environment.environment_generators import create_random_environment_old, create_random_environment
@@ -9,7 +10,13 @@ from source_code.Environment.map_elements import Checkpoint
 from source_code.Agent.PPO import PPOAgent
 from source_code.Other.render_multi_boats import render_multi_boats
 
-with open("./config.yaml") as f:
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--config', type=str, default='./config.yaml', help="Path to config file")
+parser.add_argument('--agent', type=str, default='./checkpoints/ppo_sailing.pt', help="Path to agent model to load")
+args = parser.parse_args()
+
+with open(args.config, 'r') as f:
     cfg = yaml.safe_load(f)
 
 #cp1 = Checkpoint(np.array([20.0, 20.0]), radius=5.0, number=1)
