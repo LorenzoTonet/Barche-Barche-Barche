@@ -79,12 +79,12 @@ The physics of the environment including the movement of the boat and the manage
 │   │   ├── PPO.py # documented
 │   │   └── training.py # documented
 │   ├── Environment
-│   │   ├── boat_physics.py
 │   │   ├── docs.md
-│   │   ├── environment_generators.py #documented
 │   │   ├── EnvironmentPhysics.md
-│   │   ├── environment.py
-│   │   ├── map_elements.py
+│   │   ├── boat_physics.py
+│   │   ├── environment_generators.py #documented
+│   │   ├── environment.py #documented
+│   │   ├── map_elements.py # documented
 │   │   └── vector_field.py
 │   └── Other
 │       ├── docs.md
@@ -92,10 +92,10 @@ The physics of the environment including the movement of the boat and the manage
 ├── README.md
 ├── config.yaml
 ├── requirements.txt
-├── benchmark.py
-├── evaluate.py
+├── benchmark.py # documented
+├── evaluate.py # documented
 ├── train.py # documented
-└── main.py
+└── main.py # documented
 
 
 ```

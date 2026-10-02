@@ -1,3 +1,19 @@
+"""
+Lorenzo Tonet SM3800123
+Emanuele Toso SM3800114
+
+evaluate.py
+
+This file contains simply the logic to evaluate a pre-trained PPO agent on a randomized sailing environment. Like other files, 
+all the parameters/hyperparameters are loaded from a YAML config file. The evaluation can be done in two modes:
+- single_run: the agent is evaluated on a single run and the cumulative reward is plotted at the end of the run
+- save_multi_run: the agent is evaluated on multiple runs and the results are rendered on a single video and saved to disk. 
+  The video is saved in the path specified in the config file under the key "evaluate" -> "video_path".
+
+This file has been used to visualize the performance of the agent on a single run and to generate a video of multiple runs for the final report.
+"""
+
+
 import yaml
 import numpy as np
 import imageio
@@ -13,7 +29,7 @@ from source_code.Other.render_multi_boats import render_multi_boats
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--config', type=str, default='./config.yaml', help="Path to config file")
-parser.add_argument('--agent', type=str, default='./checkpoints/ppo_sailing.pt', help="Path to agent model to load")
+parser.add_argument('--agent', type=str, default='./experiments/Orfeo/ppo_sailing.pt', help="Path to agent model to load")
 args = parser.parse_args()
 
 with open(args.config, 'r') as f:

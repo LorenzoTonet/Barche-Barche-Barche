@@ -1,3 +1,18 @@
+"""
+Lorenzo Tonet SM3800123
+Emanuele Toso SM3800114
+
+environment.py
+
+This file contains the implementation of the SailingEnv class, which represents the sailing environment for reinforcement learning.
+
+Classes:
+- FlattenSailingObs: A wrapper for the SailingEnv environment that flattens the observation
+- SailingEnv: The main class representing the sailing environment, handling the dynamics of the boat, wind, and checkpoints.
+
+The SailingEnv class is compatible with the OpenAI Gymnasium interface.
+"""
+
 from random import random
 import gymnasium as gym
 from gymnasium import spaces
@@ -13,12 +28,9 @@ from .map_elements import Checkpoint
 
 class FlattenSailingObs(gym.ObservationWrapper):
     """
-    Wrapper per normalizzare e appiattire le osservazioni dell'ambiente SailingEnv in un array 1D.
-    Ordine dei campi (fisso, documentalo da qualche parte se lo cambi):
-    [boat_pos_x, boat_pos_y, boat_velocity, sin(angle), cos(angle),
-     wind_x, wind_y,
-     next_cp_dx, next_cp_dy, next_cp_dist,
-     next_next_cp_dx, next_next_cp_dy, next_next_cp_dist]
+    This class is a wrapper for the SailingEnv environment that flattens the observation space.
+    The original observation space is a dictionary containing various information about the boat, wind, and checkpoints
+    The flattened observation space is a 1D numpy array that concatenates all the relevant information into a single vector useful as input for NNs.
     """
 
     def __init__(self, env: gym.Env):
@@ -34,6 +46,8 @@ class FlattenSailingObs(gym.ObservationWrapper):
         return np.concatenate([
             np.asarray(obs["boat_position"], dtype=np.float32),
             np.array([obs["boat_speed"]], dtype=np.float32),
+            # The boat angle is represented as a 2D vector (sin(angle), cos(angle)) to avoid discontinuities at the angle wrap-around.
+            # Empirically this representation provides better stability during training of the PPO agent.
             np.array([np.sin(angle), np.cos(angle)], dtype=np.float32),
             np.asarray(obs["wind_vector"], dtype=np.float32),
             np.asarray(obs["next_checkpoint_pos"], dtype=np.float32),
@@ -45,6 +59,11 @@ class FlattenSailingObs(gym.ObservationWrapper):
 
 
 class SailingEnv(gym.Env):
+    """
+    This class represents the sailing environment for reinforcement learning and handles the dynamics of the boat, wind, and checkpoints.
+    The environment simulates a boat navigating through a series of checkpoints while being affected by wind.
+    This class is compatible with the OpenAI Gymnasium interface, allowing for easy integration with reinforcement learning algorithms.
+    """
 
     def __init__(self, config: dict, checkpoints: list, render_mode: str = None):
         self.config = config
@@ -70,9 +89,7 @@ class SailingEnv(gym.Env):
         self.h = config["map_height"]
         self.w = config["map_width"]
 
-        #ACTIONS = ROTATE_LEFT_BOAT, ROTATE_RIGHT_BOAT
-        # The action space is a continuous 2D vector representing the rotation angle of the sail and the boat
-        # for simplicity it will be parameterized as a 2D vector with values in the range [-1, 1] for both dimensions
+        # ACTIONS = Choose a "rotation intensity" for the boat, in the range [-1, 1], where -1 is full left rotation and +1 is full right rotation.
         self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float32)
 
         # OBSERVATIONS = 
@@ -95,6 +112,15 @@ class SailingEnv(gym.Env):
         self.clock = None
  
     def _calc_relative_dist_(self, point: Checkpoint):
+        """
+        Inputs:
+        - point : Checkpoint object to which the relative distance is calculated
+                
+        Output:
+        - relative_distances : a numpy array containing the relative distance from the boat to the checkpoint in the x and y directions, as well as the Euclidean distance.
+        
+        Utility function to calculate the relative distance from the boat to a given checkpoint.
+        """
         boat_x = self.state["boat_position"][0]
         boat_y = self.state["boat_position"][1]
         point_x, point_y = point.position
@@ -149,6 +175,18 @@ class SailingEnv(gym.Env):
         return self._get_observation(), {}
 
     def step(self, action):
+        """
+        Inputs:
+        - action : a float in the range [-1, 1] representing the rotation intensity of the boat.
+                
+        Output:
+        - observation : a dictionary containing the current state of the environment
+        - reward : a float representing the reward obtained from the last action
+        - terminated : a boolean indicating whether the episode has ended (all checkpoints reached)
+        - truncated : a boolean indicating whether the episode has been truncated (max steps reached)
+        - info : a dictionary containing additional information about the environment state.
+
+        """
         info = {}
         info["failed"] = False
 
@@ -189,6 +227,10 @@ class SailingEnv(gym.Env):
         return self._get_observation(), reward, terminated, truncated, info
 
     def reward_function(self):
+        """
+        Reward function for the sailing environment.
+        The reward is calculated based on the boat's progress towards the next checkpoint, penalties for going out of bounds, and bonuses for reaching checkpoints.
+        """
         next_idx = self.state["next_checkpoint_idx"]
 
         if next_idx >= self.n_checkpoints:
@@ -216,71 +258,75 @@ class SailingEnv(gym.Env):
         return total_reward
     
     def create_polar_diagram(self, config, polar_diagram_vals):
-            """
-            Create a polar diagram (i.e. a function that maps angles to speeds) from the given values.
-            """
-            angles_deg, raw_values = zip(*polar_diagram_vals)
-            angles_deg = np.array(angles_deg)
-            raw_values = np.array(raw_values)
-    
-            # scale values to [0, 1]
-            max_val = np.max(raw_values)
-            values = raw_values / max_val
-    
-            # convert angles to radians for spline fitting
-            angles_rad = np.radians(angles_deg)
-    
-            # interpolate
-            cs = CubicSpline(angles_rad, values, bc_type=((2, 0), (1, 0)))
-    
-            if config.get("plot", False):
-                fine_angles_deg = np.linspace(0, 180, 200)
-                fine_angles_rad = np.radians(fine_angles_deg)
-                fine_values = cs(fine_angles_rad)
-    
-                plt.figure(figsize=(10, 5))
-    
-                plt.subplot(1, 2, 1)
-                plt.plot(angles_deg, values, "ro", label="Data points")
-                plt.plot(fine_angles_deg, fine_values, "b-", label="Cubic Spline")
-                plt.title("Boat Speed vs True Wind Angle (TWA)")
-                plt.xlabel("TWA (°)")
-                plt.ylabel("Normalized Boat Speed")
-                plt.grid(True)
-                plt.legend()
-    
-                plt.subplot(1, 2, 2, projection="polar")
-                plt.gca().set_theta_zero_location("N")
-                plt.gca().set_theta_direction(-1)  # Clockwise
-                plt.plot(fine_angles_rad, fine_values, "b-", label="Starboard")
-                plt.plot(-fine_angles_rad, fine_values, "b--", label="Port (Symmetric)")
-                plt.title("Polar Diagram", y=1.08)
-                plt.grid(True)
-    
-                plt.tight_layout()
-                plt.savefig("polar_plot.png", dpi=150)
-                plt.close()
-    
-            return cs
+        """
+        Create a polar diagram (i.e. a function that maps angles to speeds) from the given values.
+        """
+        angles_deg, raw_values = zip(*polar_diagram_vals)
+        angles_deg = np.array(angles_deg)
+        raw_values = np.array(raw_values)
+
+        # scale values to [0, 1]
+        max_val = np.max(raw_values)
+        values = raw_values / max_val
+
+        # convert angles to radians for spline fitting
+        angles_rad = np.radians(angles_deg)
+
+        # interpolate
+        cs = CubicSpline(angles_rad, values, bc_type=((2, 0), (1, 0)))
+
+        if config.get("plot", False):
+            fine_angles_deg = np.linspace(0, 180, 200)
+            fine_angles_rad = np.radians(fine_angles_deg)
+            fine_values = cs(fine_angles_rad)
+
+            plt.figure(figsize=(10, 5))
+
+            plt.subplot(1, 2, 1)
+            plt.plot(angles_deg, values, "ro", label="Data points")
+            plt.plot(fine_angles_deg, fine_values, "b-", label="Cubic Spline")
+            plt.title("Boat Speed vs True Wind Angle (TWA)")
+            plt.xlabel("TWA (°)")
+            plt.ylabel("Normalized Boat Speed")
+            plt.grid(True)
+            plt.legend()
+
+            plt.subplot(1, 2, 2, projection="polar")
+            plt.gca().set_theta_zero_location("N")
+            plt.gca().set_theta_direction(-1)  # Clockwise
+            plt.plot(fine_angles_rad, fine_values, "b-", label="Starboard")
+            plt.plot(-fine_angles_rad, fine_values, "b--", label="Port (Symmetric)")
+            plt.title("Polar Diagram", y=1.08)
+            plt.grid(True)
+
+            plt.tight_layout()
+            plt.savefig("polar_plot.png", dpi=150)
+            plt.close()
+
+        return cs
     
     def check_checkpoint_reached(self):
-            next_checkpoint_idx = self.state["next_checkpoint_idx"]
-            if next_checkpoint_idx < self.n_checkpoints:
-                next_checkpoint = self.checkpoints[next_checkpoint_idx]
-                distance_to_next_checkpoint = np.linalg.norm(self.state["boat_position"] - next_checkpoint.position)
-                if distance_to_next_checkpoint <= next_checkpoint.radius:
-                    self.state["visited_checkpoints"][next_checkpoint_idx] = True
-                    self.state["next_checkpoint_idx"] += 1
-                    self.state["just_reached_checkpoint"] = True
-                    self.state["prev_dist_to_next"] = np.linalg.norm(self.state["boat_position"] - self.checkpoints[self.state["next_checkpoint_idx"]].position) if self.state["next_checkpoint_idx"] < self.n_checkpoints else 0.0
-                else:
-                    self.state["just_reached_checkpoint"] = False
+        """
+        Check if the boat has reached just the next checkpoint and update the state accordingly.
+        """
+        next_checkpoint_idx = self.state["next_checkpoint_idx"]
+        if next_checkpoint_idx < self.n_checkpoints:
+            next_checkpoint = self.checkpoints[next_checkpoint_idx]
+            distance_to_next_checkpoint = np.linalg.norm(self.state["boat_position"] - next_checkpoint.position)
+            if distance_to_next_checkpoint <= next_checkpoint.radius:
+                self.state["visited_checkpoints"][next_checkpoint_idx] = True
+                self.state["next_checkpoint_idx"] += 1
+                self.state["just_reached_checkpoint"] = True
+                self.state["prev_dist_to_next"] = np.linalg.norm(self.state["boat_position"] - self.checkpoints[self.state["next_checkpoint_idx"]].position) if self.state["next_checkpoint_idx"] < self.n_checkpoints else 0.0
+            else:
+                self.state["just_reached_checkpoint"] = False
 
     def check_if_out_of_borders(self):
         if self.state["boat_position"][0] < (0 - self.border_tol) or self.state["boat_position"][0] > (self.w + self.border_tol) or self.state["boat_position"][1] < (0 - self.border_tol) or self.state["boat_position"][1] > (self.h + self.border_tol):
             self.state["out_of_borders"] = True
     
-    # Rendering functions (from Claude)
+    # Rendering functions (from Claude).
+    # These functions handle the visualization of the environment using Pygame, allowing for both human display and array extraction for video frame capture.
     def render(self):
         # Allow both human display and array extraction
         if self.render_mode not in ["human", "rgb_array"]:
@@ -391,7 +437,6 @@ class SailingEnv(gym.Env):
         # Return (H, W, 3) numpy array for video frame capture
         return np.transpose(pygame.surfarray.array3d(canvas), (1, 0, 2))
 
- 
     def close(self):
         if self.window is not None:
             pygame.quit()

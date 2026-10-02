@@ -1,3 +1,16 @@
+"""
+Lorenzo Tonet SM3800123
+Emanuele Toso SM3800114
+
+benchmark.py
+
+This file contains the logic to benchmark a pre-trained PPO agent on a random environment.
+Further details on the benchmark functions can be found in source_code/Agent/benchmark_utils.py.
+
+To run the benchmark, use the following command:
+    python benchmark.py --agent checkpoints/ppo_sailing.pt
+
+"""
 import yaml
 import numpy as np
 import matplotlib.pyplot as plt

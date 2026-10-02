@@ -1,3 +1,24 @@
+"""
+Lorenzo Tonet SM3800123
+Emanuele Toso SM3800114
+
+main.py
+
+This file contains the logic to run the environment in 3 different possible modes:
+- random: the agent takes random actions
+- human: the agent is controlled by the user via keyboard input
+- agent: the agent is controlled by a pre-trained PPO agent
+
+To choose the mode, set the "mode" key in the config.yaml file to one of the following values: ["random", "human", "agent"].
+If the mode is set to "agent", the path to the pre-trained agent model must be specified in the command line argument --agent "path/to/agent.pt".
+
+DISCLAMER:
+For the human mode, the agent is controlled by the user via keyboard input. 
+The user can rotate the boat left or right using the left and right arrow keys, respectively. 
+In this way, the action is a float value in the range [-1, 1] representing the rotation of the boat and not a continuous action in the range [-1, 1] 
+as in the PPO agent.
+"""
+
 import argparse
 import yaml
 import numpy as np
