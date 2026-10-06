@@ -96,9 +96,9 @@ def create_random_environment(config: dict, verbose:bool = True) -> SailingEnv:
         config["initial_wind"][1] *= -1
 
     # create the environment
+    config["initial_position"] = np.array(start_pos)
     env = SailingEnv(config=config, checkpoints=checkpoints, render_mode=config["mode"])
  
-    env.initial_boat_position = np.array(start_pos)
 
     return env
 
