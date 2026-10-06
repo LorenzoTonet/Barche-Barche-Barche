@@ -85,7 +85,8 @@ train:
   env:
     n_checkpoints: 4
     radius: 5.0
-    variable_n_checkpoints: True   # if True, n_checkpoints is the maximum number of checkpoints
+    variable_n_checkpoints: False   # if True, n_checkpoints is the maximum number of checkpoints
+  
     ckp_probability: 1.0
     wind_range: [2.0, 3.5]
 
