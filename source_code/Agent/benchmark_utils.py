@@ -11,7 +11,7 @@ from source_code.Environment.map_elements import Checkpoint
 from source_code.Agent.PPO import PPOAgent
 
 def run_benchmark(agent, cfg, checkpoint_counts=(1, 2, 3, 4), n_tests=200,
-                  max_steps=1500, seed=None, verbose=True):
+                  max_steps=1500, seed=None, verbose=True, deterministic=True):
     cfg = copy.deepcopy(cfg)  # niente side effect sul cfg del chiamante
     cfg["max_steps"] = max_steps
     cfg["train"]["env"]["variable_n_checkpoints"] = False
@@ -30,7 +30,7 @@ def run_benchmark(agent, cfg, checkpoint_counts=(1, 2, 3, 4), n_tests=200,
             info = {}
 
             while not (done or truncated):
-                action, _ = agent.get_action(state, deterministic=True)
+                action, _ = agent.get_action(state, deterministic=deterministic)
                 state, r, done, truncated, info = env.step(action)
                 cum_reward += r
                 n_steps += 1
@@ -141,14 +141,14 @@ def plot_benchmark(results, save_path, title="Benchmark Model Performance",
 
 def benchmark_agent(agent, cfg, save_dir="./benchmarks", filename="benchmark.png",
                     checkpoint_counts=(1, 2, 3, 4), n_tests=200, max_steps=1500,
-                    seed=None, title="Benchmark Model Performance", verbose=True):
+                    seed=None, title="Benchmark Model Performance", deterministic = True, verbose=True):
     if seed is not None:
         np.random.seed(seed)
         # se create_random_environment usa altri RNG (torch, random, ...) seedali qui
 
     if verbose:
         print("=== STARTING BENCHMARK ===")
-    results = run_benchmark(agent, cfg, checkpoint_counts, n_tests, max_steps, seed, verbose)
+    results = run_benchmark(agent, cfg, checkpoint_counts, n_tests, max_steps, seed, verbose, deterministic)
     path = plot_benchmark(results, os.path.join(save_dir, filename), title=title)
     if verbose:
         print(f"=== BENCHMARK COMPLETED === plot salvato in {path}\n")

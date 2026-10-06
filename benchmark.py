@@ -41,4 +41,6 @@ agent = PPOAgent(
 
 agent.load(args.agent)
 
-benchmark_agent(agent=agent, cfg=cfg, save_dir="./", filename="benchmark.png", checkpoint_counts=(1,2,3,4), n_tests=200, max_steps=1500, seed = 7)
+benchmark_agent(agent=agent, cfg=cfg, save_dir="./", filename="benchmark_det.png", checkpoint_counts=(1,2,3,4), n_tests=200, max_steps=1500, seed = 7, deterministic = True)
+
+benchmark_agent(agent=agent, cfg=cfg, save_dir="./", filename="benchmark_notdet.png", checkpoint_counts=(1,2,3,4), n_tests=200, max_steps=1500, seed = 7, deterministic = False)
