@@ -25,7 +25,7 @@ The observation space is a continuous vector representing the current state of t
 | :--- | :---: | :--- |
 | **Boat position** | `Vector2D` | Absolute position of the boat $(x, y)$ |
 | **Boat speed** | `float` | Scalar magnitude of the boat velocity |
-| **Boat angle** | `float` | Current heading angle of the boat |
+| **Boat angle** | `Vector2D` | Current angle of the boat in the form $(sin(\alpha), cos(\alpha))$ |
 | **Wind vector** | `Vector2D` | Local wind vector at current boat position $(w_x, w_y)$ |
 | **Next checkpoint position** | `Vector2D` | Absolute coordinates of the next checkpoint $(x_{cp1}, y_{cp1})$ |
 | **Next checkpoint relative** | `Vector3D` | Relative metrics to next checkpoint $[dx_{cp1}, dy_{cp1}, \text{distance}_{cp1}]$ |
